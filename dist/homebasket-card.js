@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -53,6 +53,47 @@ const TRANSLATIONS = {
     lookingUp: 'Looking the barcode up…',
     lookedUp: 'Updated from Open Food Facts',
     lookupEmpty: 'Open Food Facts does not know this barcode.',
+    details: 'Product details',
+    loading: 'Loading…',
+    noDetails:
+      'Open Food Facts has nothing on this barcode. Look it up again to check ' +
+      'whether it has been added since.',
+    fetchedOn: (when) => `From Open Food Facts, ${when}`,
+    openOnOff: 'Open Food Facts page',
+    sectionNutrition: 'Nutrition, per 100 g',
+    sectionIngredients: 'Ingredients',
+    sectionAbout: 'About',
+    fieldBrand: 'Brand',
+    fieldQuantity: 'Quantity',
+    fieldServing: 'Serving',
+    fieldCategories: 'Categories',
+    fieldLabels: 'Labels',
+    fieldAllergens: 'Allergens',
+    fieldTraces: 'May contain',
+    fieldPackaging: 'Packaging',
+    fieldOrigins: 'Origin',
+    fieldMadeIn: 'Made in',
+    fieldStores: 'Stores',
+    fieldCountries: 'Sold in',
+    nutriScore: 'Nutri-Score',
+    novaGroup: 'NOVA',
+    ecoScore: 'Eco-Score',
+    novaExplained: {
+      1: 'Unprocessed',
+      2: 'Culinary ingredient',
+      3: 'Processed',
+      4: 'Ultra-processed',
+    },
+    nutriments: {
+      'energy-kcal': 'Energy',
+      fat: 'Fat',
+      'saturated-fat': 'of which saturates',
+      carbohydrates: 'Carbohydrates',
+      sugars: 'of which sugars',
+      fiber: 'Fibre',
+      proteins: 'Protein',
+      salt: 'Salt',
+    },
     save: 'Save',
     saveAndAdd: 'Save and add',
     cancel: 'Cancel',
@@ -117,6 +158,47 @@ const TRANSLATIONS = {
     lookingUp: 'Търсене на баркода…',
     lookedUp: 'Обновено от Open Food Facts',
     lookupEmpty: 'Open Food Facts не познава този баркод.',
+    details: 'Информация за продукта',
+    loading: 'Зареждане…',
+    noDetails:
+      'Open Food Facts няма нищо за този баркод. Пробвай повторно анализиране, ' +
+      'за да провериш дали е добавен междувременно.',
+    fetchedOn: (when) => `От Open Food Facts, ${when}`,
+    openOnOff: 'Страница в Open Food Facts',
+    sectionNutrition: 'Хранителни стойности, на 100 г',
+    sectionIngredients: 'Съставки',
+    sectionAbout: 'За продукта',
+    fieldBrand: 'Марка',
+    fieldQuantity: 'Количество',
+    fieldServing: 'Порция',
+    fieldCategories: 'Категории',
+    fieldLabels: 'Етикети',
+    fieldAllergens: 'Алергени',
+    fieldTraces: 'Може да съдържа',
+    fieldPackaging: 'Опаковка',
+    fieldOrigins: 'Произход',
+    fieldMadeIn: 'Произведено в',
+    fieldStores: 'Магазини',
+    fieldCountries: 'Продава се в',
+    nutriScore: 'Nutri-Score',
+    novaGroup: 'NOVA',
+    ecoScore: 'Eco-Score',
+    novaExplained: {
+      1: 'Непреработена',
+      2: 'Кулинарна съставка',
+      3: 'Преработена',
+      4: 'Ултрапреработена',
+    },
+    nutriments: {
+      'energy-kcal': 'Енергийна стойност',
+      fat: 'Мазнини',
+      'saturated-fat': 'от които наситени',
+      carbohydrates: 'Въглехидрати',
+      sugars: 'от които захари',
+      fiber: 'Влакнини',
+      proteins: 'Белтъчини',
+      salt: 'Сол',
+    },
     save: 'Запази',
     saveAndAdd: 'Запази и добави',
     cancel: 'Отказ',
@@ -398,7 +480,7 @@ const STYLES = `
   .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .thumb svg { width: 22px; height: 22px; fill: var(--hb-muted); }
 
-  .product .info { flex: 1 1 auto; min-width: 0; }
+  .product .info { flex: 1 1 auto; min-width: 0; cursor: pointer; }
   .product .info .name { font-size: 0.9375rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
   .product .info .code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -510,6 +592,97 @@ const STYLES = `
   }
   .photo-remove svg { width: 17px; height: 17px; }
   .dialog input[type='file'] { display: none; }
+
+  /* Details sheet ------------------------------------------------------ */
+  .dialog.wide { width: min(560px, 100%); }
+  .details-head { display: flex; gap: 14px; margin-bottom: 16px; }
+  .details-head .shot {
+    flex: 0 0 auto;
+    width: 96px;
+    height: 96px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--hb-sunken);
+    display: grid;
+    place-items: center;
+  }
+  .details-head .shot img { width: 100%; height: 100%; object-fit: contain; }
+  .details-head .shot svg { width: 28px; height: 28px; fill: var(--hb-muted); }
+  .details-head .who { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .details-head .who .name { font-size: 1.05rem; font-weight: 600; line-height: 1.25; }
+  .details-head .who .sub { font-size: 0.8125rem; color: var(--hb-muted); }
+  .details-head .who .code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+    color: var(--hb-muted);
+  }
+
+  .grades { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .grade {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px 7px 8px;
+    border-radius: 12px;
+    background: var(--hb-sunken);
+  }
+  .grade .letter {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+  }
+  .grade .letter.a { background: #038141; }
+  .grade .letter.b { background: #85bb2f; color: #10240b; }
+  .grade .letter.c { background: #fecb02; color: #3b2f00; }
+  .grade .letter.d { background: #ee8100; }
+  .grade .letter.e { background: #e63e11; }
+  .grade .letter.n1 { background: #00a24d; }
+  .grade .letter.n2 { background: #ffc832; color: #3b2f00; }
+  .grade .letter.n3 { background: #ff8714; }
+  .grade .letter.n4 { background: #e63e11; }
+  .grade .meaning { display: flex; flex-direction: column; line-height: 1.2; }
+  .grade .meaning b { font-size: 0.75rem; font-weight: 600; }
+  .grade .meaning span { font-size: 0.6875rem; color: var(--hb-muted); }
+
+  .details h4 {
+    margin: 18px 0 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--hb-muted);
+  }
+  .details p { margin: 0; font-size: 0.875rem; line-height: 1.5; }
+
+  .facts { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .facts td { padding: 7px 0; border-bottom: 1px solid var(--hb-line); }
+  .facts tr:last-child td { border-bottom: none; }
+  .facts td + td { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .facts .indent { padding-inline-start: 14px; color: var(--hb-muted); }
+
+  .about { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 0.875rem; }
+  .about dt { color: var(--hb-muted); }
+  .about dd { margin: 0; overflow-wrap: anywhere; }
+
+  .details .source {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid var(--hb-line);
+    font-size: 0.75rem;
+    color: var(--hb-muted);
+  }
+  .details .source a { color: var(--hb-accent); }
 
   /* Camera ------------------------------------------------------------ */
   .camera { position: relative; background: #000; border-radius: 12px; overflow: hidden; }
@@ -651,6 +824,21 @@ function barcodeGlyph(code) {
   return svg;
 }
 
+/** One of the Open Food Facts score badges. */
+function gradeBadge(tone, letter, label, meaning) {
+  return el(
+    'div',
+    { class: 'grade' },
+    el('span', { class: `letter ${tone}`, text: letter }),
+    el(
+      'span',
+      { class: 'meaning' },
+      el('b', { text: label }),
+      meaning ? el('span', { text: meaning }) : null,
+    ),
+  );
+}
+
 /** Create an element with attributes, classes and children in one call. */
 function el(tag, options = {}, ...children) {
   const node = document.createElement(tag);
@@ -686,9 +874,13 @@ function iconButton(name, label, onClick, extraClass = '') {
  * Show a modal inside the card's shadow root.
  * `build(body, close)` fills the content and may return a cleanup function.
  */
-function openDialog(root, { title, build, buttons }) {
+function openDialog(root, { title, build, buttons, wide }) {
   const backdrop = el('div', { class: 'backdrop' });
-  const dialog = el('div', { class: 'dialog', role: 'dialog', 'aria-modal': 'true' });
+  const dialog = el('div', {
+    class: wide ? 'dialog wide' : 'dialog',
+    role: 'dialog',
+    'aria-modal': 'true',
+  });
   const content = el('div', { class: 'content' });
   const actions = el('div', { class: 'actions' });
 
@@ -1322,6 +1514,162 @@ class HomeBasketCard extends HTMLElement {
     if (code) await this._submit(code);
   }
 
+  /* ---------------- Details sheet ---------------- */
+
+  /**
+   * Everything Open Food Facts knows about a product.
+   *
+   * The record is fetched once and kept by the integration; opening a product
+   * reads that copy. Only "Look up again" goes back out to the network.
+   */
+  async _openDetails(item) {
+    const t = this._t;
+    const code = item.code;
+    let body;
+
+    const load = async (refresh) => {
+      body.replaceChildren(el('div', { class: 'empty', text: t.loading }));
+      try {
+        const { details } = await this._call('homebasket/details', { code, refresh });
+        if (refresh) toast(this.shadowRoot, details ? t.lookedUp : t.lookupEmpty, !details);
+        body.replaceChildren(
+          details ? this._renderDetails(details, item, t) : el('div', { class: 'empty' }, el('p', { text: t.noDetails })),
+        );
+        if (refresh && details) await this._refresh();
+      } catch (err) {
+        body.replaceChildren(el('div', { class: 'empty' }, el('p', { text: err.message || t.noAnswer })));
+      }
+    };
+
+    openDialog(this.shadowRoot, {
+      title: t.details,
+      wide: true,
+      build: (content) => {
+        body = el('div', { class: 'details' });
+        content.appendChild(body);
+        load(false);
+      },
+      buttons: [
+        { label: t.lookUpAgain, start: true, onClick: () => load(true) },
+        {
+          label: t.edit,
+          onClick: (close) => {
+            close();
+            const current =
+              this._state.mappings.find((entry) => entry.code === code) || item;
+            this._openProductDialog(code, current);
+          },
+        },
+        { label: t.close, primary: true, onClick: (close) => close() },
+      ],
+    });
+  }
+
+  _renderDetails(details, item, t) {
+    const rows = [
+      [t.fieldBrand, details.brands?.join(', ') || details.brand],
+      [t.fieldQuantity, details.quantity],
+      [t.fieldServing, details.serving_size],
+      [t.fieldCategories, details.categories?.join(' · ')],
+      [t.fieldLabels, details.labels?.join(', ')],
+      [t.fieldAllergens, details.allergens?.join(', ')],
+      [t.fieldTraces, details.traces?.join(', ')],
+      [t.fieldPackaging, details.packaging],
+      [t.fieldOrigins, details.origins],
+      [t.fieldMadeIn, details.manufacturing_places],
+      [t.fieldStores, details.stores?.join(', ')],
+      [t.fieldCountries, details.countries?.join(', ')],
+    ].filter(([, value]) => value);
+
+    const fragment = document.createDocumentFragment();
+
+    // Header: picture, name, what it is, barcode.
+    const shot = el('div', { class: 'shot' });
+    const picture = details.images?.front || details.image;
+    shot.appendChild(picture ? el('img', { src: picture, alt: '', loading: 'lazy' }) : icon('image'));
+    fragment.appendChild(
+      el(
+        'div',
+        { class: 'details-head' },
+        shot,
+        el(
+          'div',
+          { class: 'who' },
+          el('div', { class: 'name', text: item.name || details.label }),
+          details.generic_name && details.generic_name !== details.name
+            ? el('div', { class: 'sub', text: details.generic_name })
+            : null,
+          el('div', { class: 'code', text: details.code }),
+        ),
+      ),
+    );
+
+    // Score badges.
+    const grades = el('div', { class: 'grades' });
+    const { nutriscore, nova, ecoscore } = details.grades || {};
+    if (nutriscore) grades.appendChild(gradeBadge(nutriscore, nutriscore, t.nutriScore));
+    if (nova) {
+      grades.appendChild(gradeBadge(`n${nova}`, String(nova), t.novaGroup, t.novaExplained[nova]));
+    }
+    if (ecoscore) grades.appendChild(gradeBadge(ecoscore, ecoscore, t.ecoScore));
+    if (grades.children.length) fragment.appendChild(grades);
+
+    // Nutrition table.
+    if (details.nutriments?.length) {
+      const table = el('table', { class: 'facts' });
+      const SUB_ROWS = ['saturated-fat', 'sugars'];
+      for (const row of details.nutriments) {
+        table.appendChild(
+          el(
+            'tr',
+            {},
+            el('td', {
+              class: SUB_ROWS.includes(row.key) ? 'indent' : '',
+              // The backend labels are English; translate by key where we can.
+              text: t.nutriments[row.key] || row.label,
+            }),
+            el('td', { text: `${row.value} ${row.unit}` }),
+          ),
+        );
+      }
+      fragment.append(el('h4', { text: t.sectionNutrition }), table);
+    }
+
+    if (details.ingredients) {
+      fragment.append(
+        el('h4', { text: t.sectionIngredients }),
+        el('p', { text: details.ingredients }),
+      );
+    }
+
+    if (rows.length) {
+      const list = el('dl', { class: 'about' });
+      for (const [label, value] of rows) {
+        list.append(el('dt', { text: label }), el('dd', { text: value }));
+      }
+      fragment.append(el('h4', { text: t.sectionAbout }), list);
+    }
+
+    const when = details.fetched
+      ? new Date(details.fetched).toLocaleDateString(this._hass?.locale?.language || undefined)
+      : '';
+    fragment.appendChild(
+      el(
+        'div',
+        { class: 'source' },
+        el('span', { text: t.fetchedOn(when) }),
+        el('a', {
+          href: details.url,
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          text: t.openOnOff,
+        }),
+      ),
+    );
+
+    return fragment;
+  }
+
   /* ---------------- Rendering ---------------- */
 
   _build() {
@@ -1605,7 +1953,18 @@ class HomeBasketCard extends HTMLElement {
       thumb,
       el(
         'div',
-        { class: 'info' },
+        {
+          class: 'info',
+          role: 'button',
+          tabindex: '0',
+          title: t.details,
+          on: {
+            click: () => this._openDetails(item),
+            keydown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') this._openDetails(item);
+            },
+          },
+        },
         el('div', { class: 'name', text: item.name || item.code }),
         el('div', { class: 'code', text: item.code }),
       ),

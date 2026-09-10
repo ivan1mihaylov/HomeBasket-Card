@@ -84,6 +84,18 @@ improved in the database since you first scanned it, or after you renamed it by
 hand and want the original back. It only fills the fields in; the save still
 has to be confirmed.
 
+## Product details
+
+Tapping a product's name opens everything Open Food Facts knows about it:
+Nutri-Score, NOVA and Eco-Score, the nutrition table per 100 g, the ingredient
+list, allergens, labels, packaging, origin and where it is sold, with a link to
+the product's page on Open Food Facts.
+
+The record is fetched once, when the barcode is first scanned, and kept by the
+integration — opening a product reads that stored copy and makes no network
+request. **Look up again**, in both the details sheet and the edit sheet, is the
+only thing that goes back out to Open Food Facts.
+
 ## How a scan flows
 
 ```
