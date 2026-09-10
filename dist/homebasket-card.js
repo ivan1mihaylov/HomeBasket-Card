@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.1.1';
+const VERSION = '0.1.0';
 
 /** Styles for the HomeBasket card. Plain CSS, no Home Assistant components. */
 
