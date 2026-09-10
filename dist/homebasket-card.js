@@ -9,35 +9,170 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 
-/** Styles for the HomeBasket card. Plain CSS, no Home Assistant components. */
+/* ------------------------------------------------------------------ *
+ * Translations
+ *
+ * The language follows the card config, then Home Assistant's own
+ * language, then English.
+ * ------------------------------------------------------------------ */
+
+const TRANSLATIONS = {
+  en: {
+    title: 'Shopping',
+    products: (n) => `${n} product${n === 1 ? '' : 's'}`,
+    scanPlaceholder: 'Enter a barcode or search',
+    scanWithCamera: 'Scan with the camera',
+    add: 'Add',
+    recent: 'Recent scans',
+    known: 'Known products',
+    search: 'Search products',
+    filter: 'Search',
+    nameIt: 'Name it',
+    added: 'Added',
+    onList: 'On the list',
+    recognised: 'Recognised',
+    unknown: 'Unknown',
+    addedToList: (name) => `${name} added to the list`,
+    alreadyOnList: (name) => `${name} is already on the list`,
+    savedAs: (name) => `Saved as ${name}`,
+    noProducts: 'No products yet. Scan something to get started.',
+    noMatch: 'No product matches this search.',
+    newProduct: 'New product',
+    editProduct: 'Edit product',
+    barcodeIs: (code) => `Barcode ${code}`,
+    unknownBarcode: (code) => `Barcode ${code} is not known yet.`,
+    productName: 'Product name',
+    category: 'Category',
+    categoryHint: 'Optional, shown as a label in the list.',
+    photo: 'Photo',
+    takePhoto: 'Take or upload a photo',
+    removePhoto: 'Remove photo',
+    save: 'Save',
+    saveAndAdd: 'Save and add',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    addToList: 'Add to the shopping list',
+    edit: 'Edit',
+    forget: 'Forget this product',
+    forgetTitle: 'Forget product',
+    forgetMessage: (name) => `HomeBasket will no longer recognise ${name}.`,
+    notSetUp:
+      'The HomeBasket integration is not set up yet. Add it under Settings → ' +
+      'Devices & Services → Add Integration → HomeBasket, then reload this page.',
+    noAnswer: 'HomeBasket did not answer.',
+    tryAgain: 'Try again',
+    scanFailed: 'Scan failed',
+    cameraTitle: 'Scan a barcode',
+    cameraStarting: 'Starting the camera…',
+    cameraAim: 'Point the camera at the barcode.',
+    cameraDenied:
+      'Camera access was denied. Allow it for Home Assistant and try again.',
+    cameraFailed: (message) => `Could not start the camera: ${message}`,
+    cameraInsecure:
+      'The camera needs a secure connection. Open Home Assistant over HTTPS.',
+    cameraUnsupported: 'This browser does not give web pages access to the camera.',
+    cameraNoDetector:
+      'This browser has no built-in barcode detector. Type the code by hand, ' +
+      'or set zxing_url in the card configuration.',
+    close: 'Close',
+    photoTooBig: 'That image could not be read.',
+  },
+  bg: {
+    title: 'Пазаруване',
+    products: (n) => `${n} ${n === 1 ? 'продукт' : 'продукта'}`,
+    scanPlaceholder: 'Въведи баркод или търси',
+    scanWithCamera: 'Сканирай с камерата',
+    add: 'Добави',
+    recent: 'Нови сканирания',
+    known: 'Познати продукти',
+    search: 'Търси продукт',
+    filter: 'Търсене',
+    nameIt: 'Именувай',
+    added: 'Добавено',
+    onList: 'В списъка',
+    recognised: 'Разпознат',
+    unknown: 'Непознат',
+    addedToList: (name) => `${name} е добавен в списъка`,
+    alreadyOnList: (name) => `${name} вече е в списъка`,
+    savedAs: (name) => `Запазено като ${name}`,
+    noProducts: 'Още няма продукти. Сканирай нещо, за да започнеш.',
+    noMatch: 'Няма продукт по това търсене.',
+    newProduct: 'Нов продукт',
+    editProduct: 'Редакция на продукт',
+    barcodeIs: (code) => `Баркод ${code}`,
+    unknownBarcode: (code) => `Баркод ${code} още не е познат.`,
+    productName: 'Име на продукта',
+    category: 'Категория',
+    categoryHint: 'По избор, показва се като етикет в списъка.',
+    photo: 'Снимка',
+    takePhoto: 'Снимай или качи снимка',
+    removePhoto: 'Премахни снимката',
+    save: 'Запази',
+    saveAndAdd: 'Запази и добави',
+    cancel: 'Отказ',
+    delete: 'Изтрий',
+    addToList: 'Добави в списъка за пазаруване',
+    edit: 'Редактирай',
+    forget: 'Забрави този продукт',
+    forgetTitle: 'Забравяне на продукт',
+    forgetMessage: (name) => `HomeBasket повече няма да разпознава ${name}.`,
+    notSetUp:
+      'Интеграцията HomeBasket още не е добавена. Добави я от Настройки → ' +
+      'Устройства и услуги → Добавяне на интеграция → HomeBasket и презареди страницата.',
+    noAnswer: 'HomeBasket не отговори.',
+    tryAgain: 'Опитай пак',
+    scanFailed: 'Сканирането не успя',
+    cameraTitle: 'Сканиране на баркод',
+    cameraStarting: 'Камерата се стартира…',
+    cameraAim: 'Насочи камерата към баркода.',
+    cameraDenied:
+      'Достъпът до камерата е отказан. Разреши го за Home Assistant и опитай пак.',
+    cameraFailed: (message) => `Камерата не тръгна: ${message}`,
+    cameraInsecure:
+      'Камерата изисква защитена връзка. Отвори Home Assistant през HTTPS.',
+    cameraUnsupported: 'Този браузър не дава достъп до камерата на уеб страници.',
+    cameraNoDetector:
+      'Този браузър няма вграден четец на баркодове. Въведи кода ръчно или ' +
+      'задай zxing_url в настройките на картата.',
+    close: 'Затвори',
+    photoTooBig: 'Изображението не можа да бъде прочетено.',
+  },
+};
+
+/** Return the translation table for a language code. */
+function stringsFor(language) {
+  const code = String(language || 'en').toLowerCase().split('-')[0];
+  return TRANSLATIONS[code] || TRANSLATIONS.en;
+}
+
+/* ------------------------------------------------------------------ *
+ * Styles
+ * ------------------------------------------------------------------ */
 
 const STYLES = `
   :host {
-    --hb-radius: 12px;
-    --hb-gap: 12px;
+    --hb-radius: 22px;
     --hb-fg: var(--primary-text-color, #212121);
     --hb-muted: var(--secondary-text-color, #727272);
     --hb-accent: var(--primary-color, #03a9f4);
     --hb-danger: var(--error-color, #db4437);
     --hb-ok: var(--success-color, #43a047);
-    --hb-line: var(--divider-color, rgba(127, 127, 127, 0.25));
+    --hb-line: var(--divider-color, rgba(127, 127, 127, 0.22));
     --hb-surface: var(--card-background-color, #fff);
-    --hb-sunken: color-mix(in srgb, var(--hb-fg) 6%, transparent);
+    --hb-sunken: color-mix(in srgb, var(--hb-fg) 5%, transparent);
+    --hb-raised: color-mix(in srgb, var(--hb-fg) 3%, var(--hb-surface));
     display: block;
-    /* The editor renders without the .card wrapper, so the text colour has to
-       come from the host or it falls back to the browser default. */
     color: var(--hb-fg);
   }
 
   .card {
     background: var(--hb-surface);
     border-radius: var(--ha-card-border-radius, var(--hb-radius));
-    box-shadow: var(--ha-card-box-shadow, 0 2px 4px rgba(0, 0, 0, 0.12));
+    box-shadow: var(--ha-card-box-shadow, 0 2px 6px rgba(0, 0, 0, 0.1));
     border: var(--ha-card-border-width, 1px) solid
       var(--ha-card-border-color, var(--hb-line));
-    color: var(--hb-fg);
     overflow: hidden;
   }
 
@@ -45,62 +180,104 @@ const STYLES = `
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--hb-gap);
-    padding: 16px 16px 8px;
+    gap: 12px;
+    padding: 18px 18px 10px;
   }
+  header .heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
   header h2 {
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 500;
-    line-height: 1.3;
+    font-size: 1.3rem;
+    font-weight: 600;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  header .count {
+  header .heading svg { width: 20px; height: 20px; fill: var(--hb-muted); flex: 0 0 auto; }
+  .pill {
+    flex: 0 0 auto;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--hb-sunken);
     color: var(--hb-muted);
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
+    font-weight: 500;
     white-space: nowrap;
   }
 
-  .body { padding: 8px 16px 16px; }
+  .body { padding: 0 18px 18px; }
 
-  .scan-row {
+  /* Scan row --------------------------------------------------------- */
+  .scan {
     display: flex;
-    gap: 8px;
     align-items: stretch;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 18px;
+    background: var(--hb-sunken);
   }
-  .scan-row input {
+  .scan-tile {
+    flex: 0 0 auto;
+    width: 68px;
+    height: 68px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    background: var(--hb-surface);
+    border: 1px solid var(--hb-line);
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+  .scan-tile:active { transform: scale(0.96); }
+  .scan-tile svg { width: 40px; height: 40px; fill: none; stroke: var(--hb-fg); stroke-width: 1.6; }
+  .scan-tile .beam { stroke: var(--hb-danger); stroke-width: 2; }
+
+  .scan-main {
     flex: 1 1 auto;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .scan-tools { display: flex; justify-content: flex-end; gap: 4px; }
+  .scan-main input {
+    width: 100%;
+    box-sizing: border-box;
     font: inherit;
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--hb-fg);
-    background: var(--hb-sunken);
+    background: var(--hb-surface);
     border: 1px solid var(--hb-line);
-    border-radius: 8px;
-    padding: 10px 12px;
+    border-radius: 12px;
+    padding: 10px 14px;
   }
-  .scan-row input:focus {
-    outline: 2px solid var(--hb-accent);
-    outline-offset: -1px;
-  }
+  .scan-main input:focus { outline: 2px solid var(--hb-accent); outline-offset: -1px; }
 
-  button {
-    font: inherit;
-    color: inherit;
-    background: none;
-    border: none;
-    cursor: pointer;
-    border-radius: 8px;
-  }
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; border-radius: 10px; }
   button:disabled { opacity: 0.45; cursor: default; }
+  button svg { width: 20px; height: 20px; fill: currentColor; display: block; }
+
+  .icon-btn {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    color: var(--hb-muted);
+  }
+  .icon-btn:hover { color: var(--hb-accent); background: var(--hb-sunken); }
+  .icon-btn.danger:hover { color: var(--hb-danger); }
 
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 10px 14px;
+    padding: 9px 14px;
     border: 1px solid var(--hb-line);
-    background: var(--hb-sunken);
+    border-radius: 12px;
+    background: var(--hb-surface);
+    font-size: 0.875rem;
     white-space: nowrap;
   }
   .btn.primary {
@@ -108,136 +285,148 @@ const STYLES = `
     border-color: var(--hb-accent);
     color: var(--text-primary-color, #fff);
   }
-  .btn.icon { padding: 10px; min-width: 44px; }
-  button svg { width: 20px; height: 20px; fill: currentColor; }
+  .btn.block { width: 100%; }
 
-  .result {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 12px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    background: var(--hb-sunken);
-    border-left: 4px solid var(--hb-accent);
-  }
-  .result.ok { border-left-color: var(--hb-ok); }
-  .result.warn { border-left-color: var(--hb-danger); }
-  .result img { width: 40px; height: 40px; object-fit: contain; border-radius: 4px; }
-  .result .text { min-width: 0; }
-  .result .name { font-weight: 500; overflow-wrap: anywhere; }
-  .result .meta { font-size: 0.8125rem; color: var(--hb-muted); }
-
-  .section-title {
+  /* Section headings -------------------------------------------------- */
+  .section {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin: 20px 0 8px;
+    margin: 22px 0 10px;
+  }
+  .section h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+
+  /* Recent scans ------------------------------------------------------ */
+  .strip {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+  .strip::-webkit-scrollbar { height: 4px; }
+  .strip::-webkit-scrollbar-thumb { background: var(--hb-line); border-radius: 4px; }
+
+  .scan-card {
+    flex: 0 0 auto;
+    width: 150px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid var(--hb-line);
+    background: var(--hb-raised);
+    scroll-snap-align: start;
+  }
+  .scan-card.done { border-color: color-mix(in srgb, var(--hb-ok) 55%, transparent); }
+  .scan-card .code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.8125rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    color: var(--hb-muted);
+    overflow-wrap: anywhere;
+  }
+  .scan-card .name {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .scan-card .tag {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--hb-ok) 16%, transparent);
+    color: var(--hb-ok);
+  }
+  .scan-card .tag.muted {
+    background: var(--hb-sunken);
     color: var(--hb-muted);
   }
+  .scan-card svg.barcode { width: 100%; height: 30px; display: block; }
 
-  .search {
+  /* Product list ------------------------------------------------------ */
+  .search-box {
     width: 100%;
     box-sizing: border-box;
     font: inherit;
     color: var(--hb-fg);
     background: var(--hb-sunken);
     border: 1px solid var(--hb-line);
-    border-radius: 8px;
-    padding: 8px 10px;
-    margin-bottom: 8px;
+    border-radius: 12px;
+    padding: 9px 12px;
+    margin-bottom: 10px;
   }
 
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td {
-    text-align: start;
-    padding: 8px 6px;
-    border-bottom: 1px solid var(--hb-line);
-    vertical-align: middle;
+  .products { display: flex; flex-direction: column; gap: 8px; }
+  .product {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--hb-line);
+    background: var(--hb-raised);
   }
-  th {
+  .thumb {
+    flex: 0 0 auto;
+    width: 46px;
+    height: 46px;
+    border-radius: 11px;
+    background: var(--hb-sunken);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .thumb svg { width: 22px; height: 22px; fill: var(--hb-muted); }
+
+  .product .info { flex: 1 1 auto; min-width: 0; }
+  .product .info .name { font-size: 0.9375rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+  .product .info .code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.75rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
     color: var(--hb-muted);
   }
-  tr:last-child td { border-bottom: none; }
-  td.code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8125rem; color: var(--hb-muted); white-space: nowrap; }
-  td.name { font-weight: 500; overflow-wrap: anywhere; }
-  td.brand { color: var(--hb-muted); font-size: 0.8125rem; }
-  td.actions { text-align: end; white-space: nowrap; }
-  td.actions button { padding: 6px; }
-  td.actions svg { width: 20px; height: 20px; fill: var(--hb-muted); }
-  td.actions button:hover svg { fill: var(--hb-accent); }
-  td.actions button.danger:hover svg { fill: var(--hb-danger); }
+  .product .side { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .chip {
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--hb-sunken);
+    color: var(--hb-muted);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    max-width: 11ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .product .actions { display: flex; gap: 0; }
+  .product .actions .icon-btn { width: 30px; height: 30px; }
+  .product .actions svg { width: 18px; height: 18px; }
 
   .empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    padding: 24px 8px;
+    padding: 26px 8px;
     text-align: center;
     color: var(--hb-muted);
     font-size: 0.875rem;
   }
   .empty p { margin: 0; max-width: 38ch; }
 
-  /* Visual editor */
-  .editor { display: flex; flex-direction: column; gap: 16px; padding: 8px 0; }
-  .editor .field { display: flex; flex-direction: column; gap: 6px; }
-  .editor .field > span { font-size: 0.8125rem; color: var(--hb-muted); }
-  .editor .field small { font-size: 0.75rem; color: var(--hb-muted); }
-  .editor input[type='text'] {
-    width: 100%;
-    box-sizing: border-box;
-    font: inherit;
-    font-size: 1rem;
-    color: var(--hb-fg);
-    background: var(--hb-sunken);
-    border: 1px solid var(--hb-line);
-    border-radius: 8px;
-    padding: 10px 12px;
-  }
-  .editor .toggle {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.9375rem;
-    cursor: pointer;
-  }
-  .editor .toggle input {
-    flex: 0 0 auto;
-    width: 20px;
-    height: 20px;
-    margin: 0;
-    accent-color: var(--hb-accent);
-  }
-
-  .pending li {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--hb-line);
-  }
-  .pending ul { list-style: none; margin: 0; padding: 0; }
-  .pending li:last-child { border-bottom: none; }
-  .pending code { font-size: 0.875rem; overflow-wrap: anywhere; }
-  .pending .row-actions { display: inline-flex; align-items: center; gap: 4px; }
-  .pending button.danger { padding: 6px; }
-  .pending button.danger svg { fill: var(--hb-muted); }
-  .pending button.danger:hover svg { fill: var(--hb-danger); }
-
-  /* Dialogs */
+  /* Dialogs ----------------------------------------------------------- */
   .backdrop {
     position: fixed;
     inset: 0;
@@ -250,23 +439,18 @@ const STYLES = `
   }
   .dialog {
     width: min(420px, 100%);
-    max-height: min(90vh, 720px);
+    max-height: min(90vh, 760px);
     display: flex;
     flex-direction: column;
     background: var(--hb-surface);
     color: var(--hb-fg);
-    border-radius: var(--hb-radius);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    border-radius: 18px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
   }
-  .dialog h3 { margin: 0; padding: 16px 16px 8px; font-size: 1.125rem; font-weight: 500; }
-  .dialog .content { padding: 8px 16px 16px; overflow: auto; }
-  .dialog .content label {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 0.8125rem;
-    color: var(--hb-muted);
-  }
-  .dialog .content input {
+  .dialog h3 { margin: 0; padding: 18px 18px 8px; font-size: 1.1rem; font-weight: 600; }
+  .dialog .content { padding: 8px 18px 16px; overflow: auto; }
+  .dialog .content label { display: block; margin-bottom: 6px; font-size: 0.8125rem; color: var(--hb-muted); }
+  .dialog .content input[type='text'] {
     width: 100%;
     box-sizing: border-box;
     font: inherit;
@@ -274,26 +458,26 @@ const STYLES = `
     color: var(--hb-fg);
     background: var(--hb-sunken);
     border: 1px solid var(--hb-line);
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin-bottom: 12px;
+    border-radius: 12px;
+    padding: 11px 13px;
+    margin-bottom: 14px;
   }
-  .dialog .actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 8px 16px 16px;
-  }
+  .dialog .actions { display: flex; justify-content: flex-end; gap: 8px; padding: 6px 18px 18px; }
   .dialog .hint { font-size: 0.8125rem; color: var(--hb-muted); margin: 0 0 12px; }
 
-  /* Camera */
-  .camera { position: relative; background: #000; border-radius: 8px; overflow: hidden; }
+  .photo-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .photo-row .thumb { width: 64px; height: 64px; border-radius: 14px; cursor: default; }
+  .photo-row .photo-buttons { display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; min-width: 0; }
+  .photo-row input[type='file'] { display: none; }
+
+  /* Camera ------------------------------------------------------------ */
+  .camera { position: relative; background: #000; border-radius: 12px; overflow: hidden; }
   .camera video { display: block; width: 100%; max-height: 60vh; object-fit: cover; }
   .camera .reticle {
     position: absolute;
-    inset: 20% 10%;
+    inset: 22% 10%;
     border: 2px solid rgba(255, 255, 255, 0.85);
-    border-radius: 8px;
+    border-radius: 10px;
     pointer-events: none;
   }
 
@@ -305,7 +489,7 @@ const STYLES = `
     z-index: 20;
     max-width: min(90vw, 420px);
     padding: 12px 16px;
-    border-radius: 8px;
+    border-radius: 12px;
     background: #323232;
     color: #fff;
     font-size: 0.875rem;
@@ -313,8 +497,27 @@ const STYLES = `
   }
   .toast.error { background: var(--hb-danger); }
 
-  @media (max-width: 420px) {
-    td.brand, th.brand { display: none; }
+  /* Editor ------------------------------------------------------------ */
+  .editor { display: flex; flex-direction: column; gap: 16px; padding: 8px 0; }
+  .editor .field { display: flex; flex-direction: column; gap: 6px; }
+  .editor .field > span { font-size: 0.8125rem; color: var(--hb-muted); }
+  .editor .field small { font-size: 0.75rem; color: var(--hb-muted); }
+  .editor input[type='text'] {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    font-size: 1rem;
+    color: var(--hb-fg);
+    background: var(--hb-sunken);
+    border: 1px solid var(--hb-line);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .editor .toggle { display: flex; align-items: center; gap: 12px; font-size: 0.9375rem; cursor: pointer; }
+  .editor .toggle input { flex: 0 0 auto; width: 20px; height: 20px; margin: 0; accent-color: var(--hb-accent); }
+
+  @media (max-width: 380px) {
+    .chip { display: none; }
   }
 `;
 
@@ -322,8 +525,11 @@ const STYLES = `
  * DOM helpers, dialogs and toasts
  * ------------------------------------------------------------------ */
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const ICONS = {
+  basket:
+    'M22 9h-4.79l-4.38-6.56a1 1 0 0 0-1.66 0L6.79 9H2a1 1 0 0 0-.96 1.27l2.54 9.27A2 2 0 0 0 5.5 21h13a2 2 0 0 0 1.92-1.46l2.54-9.27A1 1 0 0 0 22 9zM12 4.8 14.8 9H9.2L12 4.8zM12 17a2 2 0 0 1-2-2v-2a2 2 0 0 1 4 0v2a2 2 0 0 1-2 2z',
   plus: 'M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z',
   camera:
     'M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z',
@@ -333,17 +539,73 @@ const ICONS = {
     'M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z',
   trash:
     'M9 3v1H4v2h1v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6h1V4h-5V3H9zm2 5h2v10h-2V8zm-4 0h2v10H7V8zm8 0h2v10h-2V8z',
-  close: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+  filter: 'M3 5h18v2H3V5zm4 6h10v2H7v-2zm3 6h4v2h-4v-2z',
+  image:
+    'M21 3H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H3l4.5-6 3 4L14 13l7 6z',
+  check: 'M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z',
 };
 
 /** Build an inline SVG icon element. */
 function icon(name) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
   svg.setAttribute('aria-hidden', 'true');
-  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  const path = document.createElementNS(SVG_NS, 'path');
   path.setAttribute('d', ICONS[name] || '');
   svg.appendChild(path);
+  return svg;
+}
+
+/** The outlined scanner drawing on the big scan tile. */
+function scannerGlyph() {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  const corners = 'M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3';
+  const bars = 'M7 8v8M10 8v8M13 8v8M17 8v8';
+  for (const d of [corners, bars]) {
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(path);
+  }
+  const beam = document.createElementNS(SVG_NS, 'path');
+  beam.setAttribute('d', 'M4 12h16');
+  beam.setAttribute('class', 'beam');
+  beam.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(beam);
+  return svg;
+}
+
+/**
+ * Draw a barcode-like graphic for a code.
+ *
+ * This is decoration, not a scannable barcode: the bar widths come from the
+ * digits of the code so the same product always looks the same.
+ */
+function barcodeGlyph(code) {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('class', 'barcode');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('aria-hidden', 'true');
+
+  const digits = String(code).replace(/\D/g, '') || '1234567890';
+  let x = 0;
+  for (let i = 0; i < digits.length * 2; i += 1) {
+    const digit = Number(digits[i % digits.length]);
+    const width = 1 + (digit % 3);
+    if (i % 2 === 0) {
+      const rect = document.createElementNS(SVG_NS, 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', 0);
+      rect.setAttribute('width', width);
+      rect.setAttribute('height', 10);
+      rect.setAttribute('fill', 'currentColor');
+      svg.appendChild(rect);
+    }
+    x += width;
+  }
+  svg.setAttribute('viewBox', `0 0 ${x} 10`);
   return svg;
 }
 
@@ -364,9 +626,23 @@ function el(tag, options = {}, ...children) {
   return node;
 }
 
+/** An icon-only button. */
+function iconButton(name, label, onClick, extraClass = '') {
+  return el(
+    'button',
+    {
+      class: `icon-btn ${extraClass}`.trim(),
+      title: label,
+      'aria-label': label,
+      on: { click: onClick },
+    },
+    icon(name),
+  );
+}
+
 /**
  * Show a modal inside the card's shadow root.
- * `build(body, close)` fills the content; `buttons` are rendered in the footer.
+ * `build(body, close)` fills the content and may return a cleanup function.
  */
 function openDialog(root, { title, build, buttons }) {
   const backdrop = el('div', { class: 'backdrop' });
@@ -402,7 +678,7 @@ function openDialog(root, { title, build, buttons }) {
   }
 
   root.appendChild(backdrop);
-  content.querySelector('input')?.focus();
+  content.querySelector('input[type="text"]')?.focus();
 
   return () => {
     cleanup();
@@ -410,43 +686,8 @@ function openDialog(root, { title, build, buttons }) {
   };
 }
 
-/** Ask for a single line of text. Resolves to the trimmed value, or null. */
-function promptDialog(root, { title, label, value = '', hint, confirmLabel }) {
-  return new Promise((resolve) => {
-    let input;
-    let settled = false;
-    const finish = (result, close) => {
-      if (settled) return;
-      settled = true;
-      resolve(result);
-      close();
-    };
-
-    openDialog(root, {
-      title,
-      build: (content, close) => {
-        if (hint) content.appendChild(el('p', { class: 'hint', text: hint }));
-        content.appendChild(el('label', { text: label, for: 'hb-prompt' }));
-        input = el('input', { id: 'hb-prompt', type: 'text', value });
-        input.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter') finish(input.value.trim() || null, close);
-        });
-        content.appendChild(input);
-      },
-      buttons: [
-        { label: 'Cancel', onClick: (close) => finish(null, close) },
-        {
-          label: confirmLabel || 'Save',
-          primary: true,
-          onClick: (close) => finish(input.value.trim() || null, close),
-        },
-      ],
-    });
-  });
-}
-
 /** Ask a yes/no question. Resolves to true when confirmed. */
-function confirmDialog(root, { title, message, confirmLabel }) {
+function confirmDialog(root, t, { title, message, confirmLabel }) {
   return new Promise((resolve) => {
     let settled = false;
     const finish = (result, close) => {
@@ -462,9 +703,9 @@ function confirmDialog(root, { title, message, confirmLabel }) {
         content.appendChild(el('p', { class: 'hint', text: message }));
       },
       buttons: [
-        { label: 'Cancel', onClick: (close) => finish(false, close) },
+        { label: t.cancel, onClick: (close) => finish(false, close) },
         {
-          label: confirmLabel || 'Delete',
+          label: confirmLabel || t.delete,
           primary: true,
           onClick: (close) => finish(true, close),
         },
@@ -481,6 +722,33 @@ function toast(root, message, isError = false) {
   setTimeout(() => node.remove(), isError ? 5000 : 3000);
 }
 
+/**
+ * Read a picked file and return it as a downscaled JPEG data URL.
+ *
+ * Phone cameras produce multi-megabyte images; the card only ever shows a
+ * thumbnail, so shrinking before upload keeps the stored photos small.
+ */
+function readPhoto(file, maxSize = 320) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('unreadable'));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error('unreadable'));
+      image.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 /* ------------------------------------------------------------------ *
  * Camera scanning
  *
@@ -491,31 +759,13 @@ function toast(root, message, isError = false) {
  * party behind your back.
  * ------------------------------------------------------------------ */
 
-const FORMATS = [
-  'ean_13',
-  'ean_8',
-  'upc_a',
-  'upc_e',
-  'code_128',
-  'code_39',
-  'itf',
-  'qr_code',
-];
+const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'itf', 'qr_code'];
 
 /** Report why scanning is unavailable, or null when it should work. */
-function scannerUnavailableReason(config = {}) {
-  if (!window.isSecureContext) {
-    return 'The camera needs a secure connection. Open Home Assistant over HTTPS.';
-  }
-  if (!navigator.mediaDevices?.getUserMedia) {
-    return 'This browser does not give web pages access to the camera.';
-  }
-  if (!('BarcodeDetector' in window) && !config.zxing_url) {
-    return (
-      'This browser has no built-in barcode detector. Type the code by hand, ' +
-      'or set zxing_url in the card configuration.'
-    );
-  }
+function scannerUnavailableReason(config, t) {
+  if (!window.isSecureContext) return t.cameraInsecure;
+  if (!navigator.mediaDevices?.getUserMedia) return t.cameraUnsupported;
+  if (!('BarcodeDetector' in window) && !config.zxing_url) return t.cameraNoDetector;
   return null;
 }
 
@@ -523,9 +773,7 @@ async function createDetector(config) {
   if ('BarcodeDetector' in window) {
     const supported = await window.BarcodeDetector.getSupportedFormats();
     const formats = FORMATS.filter((format) => supported.includes(format));
-    const detector = new window.BarcodeDetector(
-      formats.length ? { formats } : undefined,
-    );
+    const detector = new window.BarcodeDetector(formats.length ? { formats } : undefined);
     return async (video) => {
       const [first] = await detector.detect(video);
       return first?.rawValue || null;
@@ -553,7 +801,7 @@ async function createDetector(config) {
  * Open the camera and resolve with the first code that is read.
  * Resolves with null when the user closes the dialog.
  */
-function scanWithCamera(root, config = {}) {
+function scanWithCamera(root, config, t) {
   return new Promise((resolve) => {
     let stream = null;
     let timer = null;
@@ -573,10 +821,10 @@ function scanWithCamera(root, config = {}) {
     };
 
     openDialog(root, {
-      title: 'Scan a barcode',
+      title: t.cameraTitle,
       build: (content, close) => {
         const video = el('video', { playsinline: true, muted: true, autoplay: true });
-        const status = el('p', { class: 'hint', text: 'Starting the camera…' });
+        const status = el('p', { class: 'hint', text: t.cameraStarting });
         content.append(
           el('div', { class: 'camera' }, video, el('div', { class: 'reticle' })),
           status,
@@ -592,7 +840,7 @@ function scanWithCamera(root, config = {}) {
             await video.play();
 
             const detect = await createDetector(config);
-            status.textContent = 'Point the camera at the barcode.';
+            status.textContent = t.cameraAim;
 
             timer = setInterval(async () => {
               if (settled || video.readyState < 2) return;
@@ -601,7 +849,7 @@ function scanWithCamera(root, config = {}) {
                 code = await detect(video);
               } catch (err) {
                 clearInterval(timer);
-                status.textContent = `Scanning failed: ${err.message}`;
+                status.textContent = t.cameraFailed(err.message);
                 return;
               }
               if (code) {
@@ -611,159 +859,15 @@ function scanWithCamera(root, config = {}) {
             }, 300);
           } catch (err) {
             status.textContent =
-              err.name === 'NotAllowedError'
-                ? 'Camera access was denied. Allow it for Home Assistant and try again.'
-                : `Could not start the camera: ${err.message}`;
+              err.name === 'NotAllowedError' ? t.cameraDenied : t.cameraFailed(err.message);
           }
         })();
 
         return stop; // Runs when the dialog is dismissed.
       },
-      buttons: [{ label: 'Close', onClick: (close) => finish(null, close) }],
+      buttons: [{ label: t.close, onClick: (close) => finish(null, close) }],
     });
   });
-}
-
-/** The camera button for the scan row. */
-function cameraButton(onClick) {
-  return el(
-    'button',
-    { class: 'btn icon', title: 'Scan with the camera', 'aria-label': 'Scan with the camera', on: { click: onClick } },
-    icon('camera'),
-  );
-}
-
-/* ------------------------------------------------------------------ *
- * Product table
- * ------------------------------------------------------------------ */
-
-
-
-/**
- * Render the mappings table.
- * `actions` carries the callbacks: onAddToList, onEdit, onDelete.
- */
-function renderTable(mappings, filter, actions) {
-  const needle = filter.trim().toLowerCase();
-  const rows = mappings
-    .filter(
-      (item) =>
-        !needle ||
-        item.code.toLowerCase().includes(needle) ||
-        (item.name || '').toLowerCase().includes(needle) ||
-        (item.brand || '').toLowerCase().includes(needle),
-    )
-    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-  if (!rows.length) {
-    return el('div', {
-      class: 'empty',
-      text: mappings.length
-        ? 'No product matches this search.'
-        : 'No products learned yet. Scan something to get started.',
-    });
-  }
-
-  const body = el('tbody');
-  for (const item of rows) {
-    body.appendChild(
-      el(
-        'tr',
-        {},
-        el('td', { class: 'name', text: item.name || item.code }),
-        el('td', { class: 'brand', text: item.brand || '' }),
-        el('td', { class: 'code', text: item.code }),
-        el(
-          'td',
-          { class: 'actions' },
-          el(
-            'button',
-            {
-              title: 'Add to the shopping list',
-              'aria-label': `Add ${item.name} to the shopping list`,
-              on: { click: () => actions.onAddToList(item) },
-            },
-            icon('cart'),
-          ),
-          el(
-            'button',
-            {
-              title: 'Rename',
-              'aria-label': `Rename ${item.name}`,
-              on: { click: () => actions.onEdit(item) },
-            },
-            icon('pencil'),
-          ),
-          el(
-            'button',
-            {
-              class: 'danger',
-              title: 'Forget this product',
-              'aria-label': `Forget ${item.name}`,
-              on: { click: () => actions.onDelete(item) },
-            },
-            icon('trash'),
-          ),
-        ),
-      ),
-    );
-  }
-
-  return el(
-    'div',
-    { class: 'table-wrap' },
-    el(
-      'table',
-      {},
-      el(
-        'thead',
-        {},
-        el(
-          'tr',
-          {},
-          el('th', { text: 'Product' }),
-          el('th', { class: 'brand', text: 'Brand' }),
-          el('th', { text: 'Barcode' }),
-          el('th', { text: '' }),
-        ),
-      ),
-      body,
-    ),
-  );
-}
-
-/** Render the codes HomeBasket could not identify. */
-function renderPending(pending, actions) {
-  const list = el('ul');
-  for (const item of pending) {
-    list.appendChild(
-      el(
-        'li',
-        {},
-        el('code', { text: item.code }),
-        el(
-          'span',
-          { class: 'row-actions' },
-          el('button', {
-            class: 'btn',
-            text: 'Name it',
-            on: { click: () => actions.onName(item) },
-          }),
-          el(
-            'button',
-            {
-              class: 'danger',
-              title: 'Discard this code',
-              'aria-label': `Discard ${item.code}`,
-              on: { click: () => actions.onDelete(item) },
-            },
-            icon('trash'),
-          ),
-        ),
-      ),
-    );
-  }
-  return el('div', { class: 'pending' }, list);
 }
 
 /* ------------------------------------------------------------------ *
@@ -771,12 +875,15 @@ function renderPending(pending, actions) {
  * ------------------------------------------------------------------ */
 
 const DEFAULT_CONFIG = {
-  title: 'HomeBasket',
+  title: null,
+  language: null,
   add_on_scan: true,
-  show_table: true,
-  show_pending: true,
+  show_recent: true,
+  show_products: true,
   zxing_url: null,
 };
+
+const RECENT_LIMIT = 8;
 
 class HomeBasketCard extends HTMLElement {
   constructor() {
@@ -784,7 +891,11 @@ class HomeBasketCard extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this._config = { ...DEFAULT_CONFIG };
     this._state = { mappings: [], pending: [], last_scan: null, todo_entity: null };
+    this._recent = [];
+    this._photos = new Map();
+    this._loadingPhotos = new Set();
     this._filter = '';
+    this._searchOpen = false;
     this._busy = false;
     this._unsubscribe = null;
     this._rendered = false;
@@ -797,7 +908,7 @@ class HomeBasketCard extends HTMLElement {
   }
 
   static getStubConfig() {
-    return { type: 'custom:homebasket-card', title: 'HomeBasket' };
+    return { type: 'custom:homebasket-card' };
   }
 
   setConfig(config) {
@@ -806,7 +917,11 @@ class HomeBasketCard extends HTMLElement {
   }
 
   getCardSize() {
-    return this._config.show_table ? 8 : 3;
+    return this._config.show_products ? 9 : 4;
+  }
+
+  get _t() {
+    return stringsFor(this._config.language || this._hass?.locale?.language);
   }
 
   set hass(hass) {
@@ -849,21 +964,46 @@ class HomeBasketCard extends HTMLElement {
       // 'unknown_command' means the integration never registered its
       // WebSocket API, which in practice means it is not set up at all.
       this._error =
-        err?.code === 'unknown_command'
-          ? 'The HomeBasket integration is not set up yet. Add it under ' +
-            'Settings → Devices & Services → Add Integration → HomeBasket, ' +
-            'then reload this page.'
-          : err?.message || 'HomeBasket did not answer.';
+        err?.code === 'unknown_command' ? this._t.notSetUp : err?.message || this._t.noAnswer;
     }
     this._render();
   }
 
+  /** Fetch a locally stored photo once and hand it to the given <img>. */
+  _fillPhoto(code, image) {
+    if (this._photos.has(code)) {
+      image.src = this._photos.get(code);
+      return;
+    }
+    if (this._loadingPhotos.has(code)) return;
+
+    this._loadingPhotos.add(code);
+    this._call('homebasket/photo/get', { code })
+      .then(({ photo }) => {
+        if (!photo) return;
+        this._photos.set(code, photo);
+        image.src = photo;
+        image.hidden = false;
+      })
+      .catch(() => {})
+      .finally(() => this._loadingPhotos.delete(code));
+  }
+
   /* ---------------- Actions ---------------- */
+
+  _remember(result) {
+    this._recent = [result, ...this._recent.filter((item) => item.code !== result.code)].slice(
+      0,
+      RECENT_LIMIT,
+    );
+  }
 
   async _submit(rawCode) {
     const code = (rawCode || '').trim();
     if (!code || this._busy) return;
 
+    // A code that is already known can also just be a search term.
+    const t = this._t;
     this._busy = true;
     this._render();
     try {
@@ -871,17 +1011,19 @@ class HomeBasketCard extends HTMLElement {
         code,
         add_to_list: this._config.add_on_scan,
       });
+      this._remember(result);
+
       if (result.status === 'unknown' && !result.name) {
-        await this._askForName(code);
+        await this._openProductDialog(code, null);
       } else if (result.already_on_list) {
-        toast(this.shadowRoot, `${result.name} is already on the list`);
+        toast(this.shadowRoot, t.alreadyOnList(result.name));
       } else if (result.added) {
-        toast(this.shadowRoot, `${result.name} added to the list`);
+        toast(this.shadowRoot, t.addedToList(result.name));
       } else {
-        toast(this.shadowRoot, `${result.name} recognised`);
+        toast(this.shadowRoot, t.savedAs(result.name));
       }
     } catch (err) {
-      toast(this.shadowRoot, err.message || 'Scan failed', true);
+      toast(this.shadowRoot, err.message || t.scanFailed, true);
     } finally {
       this._busy = false;
       this._input.value = '';
@@ -889,70 +1031,189 @@ class HomeBasketCard extends HTMLElement {
     }
   }
 
-  async _askForName(code, current = '') {
-    const name = await promptDialog(this.shadowRoot, {
-      title: current ? 'Rename product' : 'New product',
-      hint: current ? `Barcode ${code}` : `Barcode ${code} is not known yet.`,
-      label: 'Product name',
-      value: current,
-      confirmLabel: current ? 'Save' : 'Save and add',
+  /**
+   * Open the product sheet: name, category and photo.
+   * `existing` is null for a code that has just been scanned.
+   */
+  async _openProductDialog(code, existing) {
+    const t = this._t;
+    const isNew = !existing;
+    let photo = existing?.has_photo ? this._photos.get(code) || null : null;
+    let photoTouched = false;
+
+    const saved = await new Promise((resolve) => {
+      let nameInput;
+      let categoryInput;
+      let settled = false;
+      const finish = (value, close) => {
+        if (settled) return;
+        settled = true;
+        resolve(value);
+        close();
+      };
+
+      openDialog(this.shadowRoot, {
+        title: isNew ? t.newProduct : t.editProduct,
+        build: (content, close) => {
+          content.appendChild(
+            el('p', {
+              class: 'hint',
+              text: isNew ? t.unknownBarcode(code) : t.barcodeIs(code),
+            }),
+          );
+
+          content.appendChild(el('label', { text: t.productName }));
+          nameInput = el('input', { type: 'text', value: existing?.name || '' });
+          nameInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') event.preventDefault();
+          });
+          content.appendChild(nameInput);
+
+          content.appendChild(el('label', { text: t.category }));
+          categoryInput = el('input', { type: 'text', value: existing?.category || '' });
+          content.appendChild(categoryInput);
+
+          // Photo picker. One file input covers both the camera and the
+          // gallery: `capture` asks for the camera where there is one.
+          const preview = el('div', { class: 'thumb' });
+          const previewImage = el('img', { alt: '', hidden: true });
+          preview.append(previewImage, icon('image'));
+          const showPhoto = (source) => {
+            previewImage.hidden = !source;
+            if (source) previewImage.src = source;
+          };
+          showPhoto(photo || existing?.image || null);
+          if (existing?.has_photo && !photo) this._fillPhoto(code, previewImage);
+
+          const file = el('input', {
+            type: 'file',
+            accept: 'image/*',
+            capture: 'environment',
+          });
+          file.addEventListener('change', async () => {
+            const [picked] = file.files || [];
+            if (!picked) return;
+            try {
+              photo = await readPhoto(picked);
+              photoTouched = true;
+              showPhoto(photo);
+            } catch {
+              toast(this.shadowRoot, t.photoTooBig, true);
+            }
+          });
+
+          const buttons = el(
+            'div',
+            { class: 'photo-buttons' },
+            el('button', {
+              class: 'btn block',
+              text: t.takePhoto,
+              on: { click: () => file.click() },
+            }),
+          );
+          if (existing?.has_photo || photo) {
+            buttons.appendChild(
+              el('button', {
+                class: 'btn block',
+                text: t.removePhoto,
+                on: {
+                  click: () => {
+                    photo = null;
+                    photoTouched = true;
+                    showPhoto(null);
+                  },
+                },
+              }),
+            );
+          }
+
+          content.append(el('label', { text: t.photo }), el('div', { class: 'photo-row' }, preview, buttons), file);
+        },
+        buttons: [
+          { label: t.cancel, onClick: (close) => finish(null, close) },
+          {
+            label: isNew ? t.saveAndAdd : t.save,
+            primary: true,
+            onClick: (close) =>
+              finish(
+                {
+                  name: nameInput.value.trim(),
+                  category: categoryInput.value.trim() || null,
+                },
+                close,
+              ),
+          },
+        ],
+      });
     });
-    if (!name) return;
+
+    if (!saved || !saved.name) return;
 
     try {
       const result = await this._call('homebasket/mapping/save', {
         code,
-        name,
-        add_to_list: !current && this._config.add_on_scan,
+        name: saved.name,
+        category: saved.category,
+        add_to_list: isNew && this._config.add_on_scan,
       });
-      if (result.already_on_list) {
-        toast(this.shadowRoot, `${name} is already on the list`);
-      } else if (result.added) {
-        toast(this.shadowRoot, `${name} added to the list`);
-      } else {
-        toast(this.shadowRoot, `${name} saved`);
+
+      if (photoTouched) {
+        if (photo) {
+          await this._call('homebasket/photo/set', { code, photo });
+          this._photos.set(code, photo);
+        } else {
+          await this._call('homebasket/photo/delete', { code });
+          this._photos.delete(code);
+        }
       }
+
+      if (result.already_on_list) toast(this.shadowRoot, t.alreadyOnList(saved.name));
+      else if (result.added) toast(this.shadowRoot, t.addedToList(saved.name));
+      else toast(this.shadowRoot, t.savedAs(saved.name));
     } catch (err) {
-      toast(this.shadowRoot, err.message || 'Could not save', true);
+      toast(this.shadowRoot, err.message || t.scanFailed, true);
     }
     await this._refresh();
   }
 
   async _addToList(item) {
+    const t = this._t;
     try {
       const result = await this._call('homebasket/list/add', { name: item.name });
       toast(
         this.shadowRoot,
-        result.already_on_list
-          ? `${item.name} is already on the list`
-          : `${item.name} added to the list`,
+        result.already_on_list ? t.alreadyOnList(item.name) : t.addedToList(item.name),
       );
     } catch (err) {
-      toast(this.shadowRoot, err.message || 'Could not add the item', true);
+      toast(this.shadowRoot, err.message || t.scanFailed, true);
     }
   }
 
-  async _delete(item) {
-    const confirmed = await confirmDialog(this.shadowRoot, {
-      title: 'Forget product',
-      message: `HomeBasket will no longer recognise ${item.name || item.code}.`,
+  async _forget(item) {
+    const t = this._t;
+    const confirmed = await confirmDialog(this.shadowRoot, t, {
+      title: t.forgetTitle,
+      message: t.forgetMessage(item.name || item.code),
     });
     if (!confirmed) return;
     try {
       await this._call('homebasket/mapping/delete', { code: item.code });
+      this._photos.delete(item.code);
+      this._recent = this._recent.filter((entry) => entry.code !== item.code);
     } catch (err) {
-      toast(this.shadowRoot, err.message || 'Could not delete', true);
+      toast(this.shadowRoot, err.message || t.scanFailed, true);
     }
     await this._refresh();
   }
 
   async _openCamera() {
-    const reason = scannerUnavailableReason(this._config);
+    const t = this._t;
+    const reason = scannerUnavailableReason(this._config, t);
     if (reason) {
       toast(this.shadowRoot, reason, true);
       return;
     }
-    const code = await scanWithCamera(this.shadowRoot, this._config);
+    const code = await scanWithCamera(this.shadowRoot, this._config, t);
     if (code) await this._submit(code);
   }
 
@@ -962,36 +1223,20 @@ class HomeBasketCard extends HTMLElement {
     const style = document.createElement('style');
     style.textContent = STYLES;
 
-    this._input = el('input', {
-      type: 'text',
-      inputmode: 'numeric',
-      autocomplete: 'off',
-      placeholder: 'Scan or type a barcode',
-      'aria-label': 'Barcode',
-    });
-    this._input.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') this._submit(this._input.value);
-    });
-
-    this._addButton = el(
-      'button',
-      {
-        class: 'btn primary icon',
-        title: 'Add',
-        'aria-label': 'Add',
-        on: { click: () => this._submit(this._input.value) },
-      },
-      icon('plus'),
-    );
-
-    this._headerCount = el('span', { class: 'count' });
     this._title = el('h2');
+    this._count = el('span', { class: 'pill' });
     this._body = el('div', { class: 'body' });
+    this._buildScanRow();
 
     this._card = el(
       'div',
       { class: 'card' },
-      el('header', {}, this._title, this._headerCount),
+      el(
+        'header',
+        {},
+        el('div', { class: 'heading' }, this._title, icon('basket')),
+        this._count,
+      ),
       this._body,
     );
 
@@ -1002,13 +1247,11 @@ class HomeBasketCard extends HTMLElement {
 
   _render() {
     if (!this._rendered) return;
+    const t = this._t;
 
-    this._title.textContent = this._config.title;
-    this._headerCount.textContent = this._error
-      ? ''
-      : `${this._state.mappings.length} products`;
-    this._addButton.disabled = this._busy;
-    this._input.disabled = this._busy;
+    this._title.textContent = this._config.title || t.title;
+    this._count.textContent = this._error ? '' : t.products(this._state.mappings.length);
+    this._count.hidden = Boolean(this._error);
 
     this._body.replaceChildren();
 
@@ -1018,94 +1261,250 @@ class HomeBasketCard extends HTMLElement {
           'div',
           { class: 'empty' },
           el('p', { text: this._error }),
-          el('button', {
-            class: 'btn',
-            text: 'Try again',
-            on: { click: () => this._refresh() },
-          }),
+          el('button', { class: 'btn', text: t.tryAgain, on: { click: () => this._refresh() } }),
         ),
       );
       return;
     }
 
-    this._body.appendChild(
-      el(
-        'div',
-        { class: 'scan-row' },
-        this._input,
-        this._addButton,
-        cameraButton(() => this._openCamera()),
-      ),
+    this._body.appendChild(this._renderScanRow(t));
+
+    if (this._config.show_recent) {
+      const recent = this._recentItems();
+      if (recent.length) {
+        this._body.append(
+          el('div', { class: 'section' }, el('h3', { text: t.recent })),
+          this._renderRecent(recent, t),
+        );
+      }
+    }
+
+    if (this._config.show_products) this._renderProductSection(t);
+  }
+
+  /**
+   * Build the scan row once and keep it.
+   *
+   * It is never re-created, so a backend update arriving mid-typing cannot
+   * steal focus or throw away a half-entered barcode.
+   */
+  _buildScanRow() {
+    const t = this._t;
+
+    this._input = el('input', {
+      type: 'text',
+      inputmode: 'search',
+      autocomplete: 'off',
+    });
+    this._input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') this._submit(event.target.value);
+    });
+    // Typing filters the product list as you go; Enter still scans.
+    this._input.addEventListener('input', (event) => {
+      this._filter = event.target.value;
+      this._renderProducts();
+    });
+
+    this._addButton = iconButton('plus', t.add, () => this._submit(this._input.value));
+    this._cameraButton = iconButton('camera', t.scanWithCamera, () => this._openCamera());
+    this._scanTile = el(
+      'div',
+      {
+        class: 'scan-tile',
+        role: 'button',
+        tabindex: '0',
+        on: {
+          click: () => this._openCamera(),
+          keydown: (event) => {
+            if (event.key === 'Enter' || event.key === ' ') this._openCamera();
+          },
+        },
+      },
+      scannerGlyph(),
     );
 
-    if (this._state.last_scan) this._body.appendChild(this._renderResult());
+    this._scanRow = el(
+      'div',
+      { class: 'scan' },
+      this._scanTile,
+      el(
+        'div',
+        { class: 'scan-main' },
+        el('div', { class: 'scan-tools' }, this._addButton, this._cameraButton),
+        this._input,
+      ),
+    );
+  }
 
-    if (this._config.show_pending && this._state.pending.length) {
-      this._body.appendChild(
-        el('div', { class: 'section-title' }, el('span', { text: 'Waiting for a name' })),
-      );
-      this._body.appendChild(
-        renderPending(this._state.pending, {
-          onName: (item) => this._askForName(item.code),
-          onDelete: (item) => this._delete(item),
-        }),
+  _renderScanRow(t) {
+    this._input.placeholder = t.scanPlaceholder;
+    this._input.setAttribute('aria-label', t.scanPlaceholder);
+    this._input.disabled = this._busy;
+    this._addButton.disabled = this._busy;
+    for (const [node, label] of [
+      [this._addButton, t.add],
+      [this._cameraButton, t.scanWithCamera],
+      [this._scanTile, t.scanWithCamera],
+    ]) {
+      node.title = label;
+      node.setAttribute('aria-label', label);
+    }
+    return this._scanRow;
+  }
+
+  /** Codes worth showing in the strip: unnamed ones first, then this session's scans. */
+  _recentItems() {
+    const pending = this._state.pending.map((item) => ({ ...item, needsName: true }));
+    const pendingCodes = new Set(pending.map((item) => item.code));
+    const scans = this._recent.filter((item) => !pendingCodes.has(item.code));
+    return [...pending, ...scans];
+  }
+
+  _renderRecent(items, t) {
+    const strip = el('div', { class: 'strip' });
+
+    for (const item of items) {
+      if (item.needsName) {
+        strip.appendChild(
+          el(
+            'div',
+            { class: 'scan-card' },
+            el('span', { class: 'tag muted', text: t.unknown }),
+            el('div', { class: 'code', text: item.code }),
+            el('button', {
+              class: 'btn block',
+              text: t.nameIt,
+              on: { click: () => this._openProductDialog(item.code, null) },
+            }),
+          ),
+        );
+        continue;
+      }
+
+      const label = item.added ? t.added : item.already_on_list ? t.onList : t.recognised;
+      const tag = el('span', { class: item.added ? 'tag' : 'tag muted' });
+      if (item.added) tag.appendChild(icon('check'));
+      tag.appendChild(el('span', { text: label }));
+
+      strip.appendChild(
+        el(
+          'div',
+          { class: item.added ? 'scan-card done' : 'scan-card' },
+          tag,
+          el('div', { class: 'name', text: item.name || item.code }),
+          barcodeGlyph(item.code),
+        ),
       );
     }
 
-    if (this._config.show_table) {
-      this._body.appendChild(
-        el('div', { class: 'section-title' }, el('span', { text: 'Known products' })),
-      );
+    return strip;
+  }
 
+  _renderProductSection(t) {
+    const toggle = iconButton('filter', t.filter, () => {
+      this._searchOpen = !this._searchOpen;
+      this._render();
+      if (this._searchOpen) this.shadowRoot.querySelector('.search-box')?.focus();
+    });
+
+    this._body.appendChild(
+      el('div', { class: 'section' }, el('h3', { text: t.known }), toggle),
+    );
+
+    if (this._searchOpen) {
       const search = el('input', {
-        class: 'search',
+        class: 'search-box',
         type: 'search',
-        placeholder: 'Search products',
-        'aria-label': 'Search products',
+        placeholder: t.search,
+        'aria-label': t.search,
         value: this._filter,
       });
       search.addEventListener('input', () => {
         this._filter = search.value;
-        this._renderTable();
+        this._renderProducts(t);
       });
-
-      this._tableHost = el('div');
-      this._body.append(search, this._tableHost);
-      this._renderTable();
+      this._body.appendChild(search);
     }
+
+    this._productHost = el('div');
+    this._body.appendChild(this._productHost);
+    this._renderProducts(t);
   }
 
-  _renderTable() {
-    this._tableHost?.replaceChildren(
-      renderTable(this._state.mappings, this._filter, {
-        onAddToList: (item) => this._addToList(item),
-        onEdit: (item) => this._askForName(item.code, item.name),
-        onDelete: (item) => this._delete(item),
-      }),
+  _renderProducts(t = this._t) {
+    if (!this._productHost) return;
+
+    const needle = this._filter.trim().toLowerCase();
+    const rows = this._state.mappings
+      .filter(
+        (item) =>
+          !needle ||
+          item.code.toLowerCase().includes(needle) ||
+          (item.name || '').toLowerCase().includes(needle) ||
+          (item.brand || '').toLowerCase().includes(needle) ||
+          (item.category || '').toLowerCase().includes(needle),
+      )
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    if (!rows.length) {
+      this._productHost.replaceChildren(
+        el('div', {
+          class: 'empty',
+          text: this._state.mappings.length ? t.noMatch : t.noProducts,
+        }),
+      );
+      return;
+    }
+
+    const list = el('div', { class: 'products' });
+    for (const item of rows) list.appendChild(this._renderProduct(item, t));
+    this._productHost.replaceChildren(list);
+  }
+
+  _renderProduct(item, t) {
+    const thumb = el('div', {
+      class: 'thumb',
+      title: t.edit,
+      on: { click: () => this._openProductDialog(item.code, item) },
+    });
+    const image = el('img', { alt: '', loading: 'lazy', hidden: true });
+    thumb.append(image, icon('image'));
+
+    if (item.has_photo) {
+      this._fillPhoto(item.code, image);
+      if (this._photos.has(item.code)) image.hidden = false;
+    } else if (item.image) {
+      image.src = item.image;
+      image.hidden = false;
+      // A dead Open Food Facts URL falls back to the placeholder icon.
+      image.addEventListener('error', () => {
+        image.hidden = true;
+      });
+    }
+
+    const side = el('div', { class: 'side' });
+    if (item.category) side.appendChild(el('span', { class: 'chip', text: item.category }));
+    side.appendChild(
+      el(
+        'div',
+        { class: 'actions' },
+        iconButton('cart', t.addToList, () => this._addToList(item)),
+        iconButton('pencil', t.edit, () => this._openProductDialog(item.code, item)),
+        iconButton('trash', t.forget, () => this._forget(item), 'danger'),
+      ),
     );
-  }
-
-  _renderResult() {
-    const scan = this._state.last_scan;
-    const status = scan.added ? 'ok' : scan.name ? '' : 'warn';
-    const meta = scan.added
-      ? 'Added to the shopping list'
-      : scan.already_on_list
-        ? 'Already on the shopping list'
-        : scan.name
-          ? `Recognised · ${scan.code}`
-          : `Not recognised · ${scan.code}`;
 
     return el(
       'div',
-      { class: `result ${status}`.trim() },
-      scan.image ? el('img', { src: scan.image, alt: '', loading: 'lazy' }) : null,
+      { class: 'product' },
+      thumb,
       el(
         'div',
-        { class: 'text' },
-        el('div', { class: 'name', text: scan.name || scan.code }),
-        el('div', { class: 'meta', text: meta }),
+        { class: 'info' },
+        el('div', { class: 'name', text: item.name || item.code }),
+        el('div', { class: 'code', text: item.code }),
       ),
+      side,
     );
   }
 }
@@ -1115,10 +1514,16 @@ class HomeBasketCard extends HTMLElement {
  * ------------------------------------------------------------------ */
 
 const EDITOR_FIELDS = [
-  { key: 'title', label: 'Title', type: 'text' },
+  { key: 'title', label: 'Title', type: 'text', hint: 'Leave empty for the default.' },
+  {
+    key: 'language',
+    label: 'Language',
+    type: 'text',
+    hint: 'bg or en. Empty follows the Home Assistant language.',
+  },
   { key: 'add_on_scan', label: 'Add scanned products to the shopping list', type: 'boolean' },
-  { key: 'show_table', label: 'Show the known products table', type: 'boolean' },
-  { key: 'show_pending', label: 'Show codes waiting for a name', type: 'boolean' },
+  { key: 'show_recent', label: 'Show recent scans', type: 'boolean' },
+  { key: 'show_products', label: 'Show the known products list', type: 'boolean' },
   {
     key: 'zxing_url',
     label: 'ZXing URL',

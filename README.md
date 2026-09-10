@@ -52,13 +52,29 @@ title: Shopping
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `title` | `HomeBasket` | Card heading. |
+| `title` | translated | Card heading. |
+| `language` | Home Assistant's | `bg` or `en`. Leave empty to follow the Home Assistant language. |
 | `add_on_scan` | `true` | Put recognised products on the shopping list immediately. Turn off to only build the product dictionary. |
-| `show_table` | `true` | Show the table of learned products. |
-| `show_pending` | `true` | Show codes that are waiting for a name. |
+| `show_recent` | `true` | Show the strip of recent scans and codes waiting for a name. |
+| `show_products` | `true` | Show the list of learned products. |
 | `zxing_url` | `null` | Only for browsers without a built-in barcode detector — see below. |
 
-All options are also editable in the visual card editor.
+All options are also editable in the visual card editor. The interface is
+translated into English and Bulgarian.
+
+## Product photos
+
+Products are shown with a picture wherever one is available:
+
+- **Automatically** — the integration stores the product image Open Food Facts
+  returns, and the card loads it from there.
+- **Your own** — tap a product's thumbnail (or the pencil), then
+  *Take or upload a photo*. On a phone that opens the camera; on a desktop it
+  opens the file picker. The photo is scaled down in the browser before it is
+  sent, and Home Assistant keeps it in its own storage — it is never served
+  from a public path.
+
+A product with neither shows a placeholder icon.
 
 ## How a scan flows
 
