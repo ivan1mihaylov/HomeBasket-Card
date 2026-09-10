@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.2.1';
+const VERSION = '0.3.0';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -49,6 +49,10 @@ const TRANSLATIONS = {
     photo: 'Photo',
     takePhoto: 'Take or upload a photo',
     removePhoto: 'Remove photo',
+    lookUpAgain: 'Look up again',
+    lookingUp: 'Looking the barcode up…',
+    lookedUp: 'Updated from Open Food Facts',
+    lookupEmpty: 'Open Food Facts does not know this barcode.',
     save: 'Save',
     saveAndAdd: 'Save and add',
     cancel: 'Cancel',
@@ -109,6 +113,10 @@ const TRANSLATIONS = {
     photo: 'Снимка',
     takePhoto: 'Снимай или качи снимка',
     removePhoto: 'Премахни снимката',
+    lookUpAgain: 'Повторно анализиране',
+    lookingUp: 'Търсене на баркода…',
+    lookedUp: 'Обновено от Open Food Facts',
+    lookupEmpty: 'Open Food Facts не познава този баркод.',
     save: 'Запази',
     saveAndAdd: 'Запази и добави',
     cancel: 'Отказ',
@@ -465,9 +473,42 @@ const STYLES = `
   .dialog .actions { display: flex; justify-content: flex-end; gap: 8px; padding: 6px 18px 18px; }
   .dialog .hint { font-size: 0.8125rem; color: var(--hb-muted); margin: 0 0 12px; }
 
-  .photo-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-  .photo-row .thumb { width: 64px; height: 64px; border-radius: 14px; cursor: default; }
-  .photo-row .photo-buttons { display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; min-width: 0; }
+  .photo-box { position: relative; width: 124px; height: 124px; margin-bottom: 16px; }
+  .photo-add {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    gap: 6px;
+    border: 1px dashed var(--hb-line);
+    border-radius: 18px;
+    background: var(--hb-sunken);
+    color: var(--hb-muted);
+  }
+  .photo-add:hover { color: var(--hb-accent); border-color: var(--hb-accent); }
+  .photo-add svg { width: 34px; height: 34px; }
+  .photo-preview {
+    width: 100%;
+    height: 100%;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--hb-sunken);
+  }
+  .photo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-remove {
+    position: absolute;
+    top: -9px;
+    right: -9px;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--hb-danger);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  }
+  .photo-remove svg { width: 17px; height: 17px; }
   .dialog input[type='file'] { display: none; }
 
   /* Camera ------------------------------------------------------------ */
@@ -543,6 +584,7 @@ const ICONS = {
   image:
     'M21 3H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H3l4.5-6 3 4L14 13l7 6z',
   check: 'M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z',
+  close: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
 };
 
 /** Build an inline SVG icon element. */
@@ -667,14 +709,16 @@ function openDialog(root, { title, build, buttons }) {
   backdrop.appendChild(dialog);
 
   const cleanup = build(content, close) || (() => {});
-  for (const { label, primary, onClick } of buttons) {
-    actions.appendChild(
-      el('button', {
-        class: primary ? 'btn primary' : 'btn',
-        text: label,
-        on: { click: () => onClick(close) },
-      }),
-    );
+  for (const { label, primary, start, onClick } of buttons) {
+    const button = el('button', {
+      class: primary ? 'btn primary' : 'btn',
+      text: label,
+      on: { click: () => onClick(close) },
+    });
+    // `start` pins a button to the left of the footer, away from the
+    // confirm/cancel pair.
+    if (start) button.style.marginInlineEnd = 'auto';
+    actions.appendChild(button);
   }
 
   root.appendChild(backdrop);
@@ -1038,12 +1082,17 @@ class HomeBasketCard extends HTMLElement {
   async _openProductDialog(code, existing) {
     const t = this._t;
     const isNew = !existing;
-    let photo = existing?.has_photo ? this._photos.get(code) || null : null;
+
+    // Two separate sources: a photo stored on this Home Assistant, and the
+    // picture Open Food Facts supplied. A local one wins when both exist.
+    let photoData = existing?.has_photo ? this._photos.get(code) || null : null;
+    let photoUrl = existing?.image || null;
     let photoTouched = false;
 
     const saved = await new Promise((resolve) => {
       let nameInput;
       let categoryInput;
+      let reanalyse = () => {};
       let settled = false;
       const finish = (value, close) => {
         if (settled) return;
@@ -1073,18 +1122,8 @@ class HomeBasketCard extends HTMLElement {
           categoryInput = el('input', { type: 'text', value: existing?.category || '' });
           content.appendChild(categoryInput);
 
-          // Photo picker. One file input covers both the camera and the
-          // gallery: `capture` asks for the camera where there is one.
-          const preview = el('div', { class: 'thumb' });
-          const previewImage = el('img', { alt: '', hidden: true });
-          preview.append(previewImage, icon('image'));
-          const showPhoto = (source) => {
-            previewImage.hidden = !source;
-            if (source) previewImage.src = source;
-          };
-          showPhoto(photo || existing?.image || null);
-          if (existing?.has_photo && !photo) this._fillPhoto(code, previewImage);
-
+          // One file input covers both the camera and the gallery: `capture`
+          // asks for the camera where there is one.
           const file = el('input', {
             type: 'file',
             accept: 'image/*',
@@ -1094,42 +1133,102 @@ class HomeBasketCard extends HTMLElement {
             const [picked] = file.files || [];
             if (!picked) return;
             try {
-              photo = await readPhoto(picked);
+              photoData = await readPhoto(picked);
               photoTouched = true;
-              showPhoto(photo);
+              drawPhoto();
             } catch {
               toast(this.shadowRoot, t.photoTooBig, true);
             }
+            file.value = '';
           });
 
-          const buttons = el(
-            'div',
-            { class: 'photo-buttons' },
-            el('button', {
-              class: 'btn block',
-              text: t.takePhoto,
-              on: { click: () => file.click() },
-            }),
-          );
-          if (existing?.has_photo || photo) {
-            buttons.appendChild(
-              el('button', {
-                class: 'btn block',
-                text: t.removePhoto,
-                on: {
-                  click: () => {
-                    photo = null;
-                    photoTouched = true;
-                    showPhoto(null);
+          // Either the square add button or the picture in its place, never
+          // both. Nothing here is written until Save.
+          const box = el('div', { class: 'photo-box' });
+          const drawPhoto = () => {
+            const source = photoData || photoUrl;
+            if (!source) {
+              box.replaceChildren(
+                el(
+                  'button',
+                  {
+                    class: 'photo-add',
+                    title: t.takePhoto,
+                    'aria-label': t.takePhoto,
+                    on: { click: () => file.click() },
+                  },
+                  icon('camera'),
+                ),
+              );
+              return;
+            }
+
+            const image = el('img', { src: source, alt: '' });
+            image.addEventListener('error', () => {
+              photoUrl = null;
+              drawPhoto();
+            });
+            box.replaceChildren(
+              el('div', { class: 'photo-preview' }, image),
+              el(
+                'button',
+                {
+                  class: 'photo-remove',
+                  title: t.removePhoto,
+                  'aria-label': t.removePhoto,
+                  on: {
+                    click: () => {
+                      photoData = null;
+                      photoUrl = null;
+                      photoTouched = true;
+                      drawPhoto();
+                    },
                   },
                 },
-              }),
+                icon('close'),
+              ),
             );
+          };
+          drawPhoto();
+
+          // A stored photo arrives asynchronously; redraw once it is here.
+          if (existing?.has_photo && !photoData) {
+            this._call('homebasket/photo/get', { code })
+              .then(({ photo }) => {
+                if (!photo || photoTouched) return;
+                this._photos.set(code, photo);
+                photoData = photo;
+                drawPhoto();
+              })
+              .catch(() => {});
           }
 
-          content.append(el('label', { text: t.photo }), el('div', { class: 'photo-row' }, preview, buttons), file);
+          reanalyse = async () => {
+            toast(this.shadowRoot, t.lookingUp);
+            try {
+              const found = await this._call('homebasket/lookup', { code });
+              if (!found.found) {
+                toast(this.shadowRoot, t.lookupEmpty, true);
+                return;
+              }
+              if (found.name) nameInput.value = found.name;
+              if (found.category) categoryInput.value = found.category;
+              if (found.image) {
+                photoUrl = found.image;
+                photoData = null;
+                photoTouched = true;
+                drawPhoto();
+              }
+              toast(this.shadowRoot, t.lookedUp);
+            } catch (err) {
+              toast(this.shadowRoot, err.message || t.scanFailed, true);
+            }
+          };
+
+          content.append(el('label', { text: t.photo }), box, file);
         },
         buttons: [
+          { label: t.lookUpAgain, start: true, onClick: () => reanalyse() },
           { label: t.cancel, onClick: (close) => finish(null, close) },
           {
             label: isNew ? t.saveAndAdd : t.save,
@@ -1139,6 +1238,9 @@ class HomeBasketCard extends HTMLElement {
                 {
                   name: nameInput.value.trim(),
                   category: categoryInput.value.trim() || null,
+                  photoData,
+                  photoUrl,
+                  photoTouched,
                 },
                 close,
               ),
@@ -1154,13 +1256,16 @@ class HomeBasketCard extends HTMLElement {
         code,
         name: saved.name,
         category: saved.category,
+        // `image` is only sent when the photo changed, so an untouched
+        // sheet never clears the picture Open Food Facts supplied.
+        ...(saved.photoTouched ? { image: saved.photoUrl } : {}),
         add_to_list: isNew && this._config.add_on_scan,
       });
 
-      if (photoTouched) {
-        if (photo) {
-          await this._call('homebasket/photo/set', { code, photo });
-          this._photos.set(code, photo);
+      if (saved.photoTouched) {
+        if (saved.photoData) {
+          await this._call('homebasket/photo/set', { code, photo: saved.photoData });
+          this._photos.set(code, saved.photoData);
         } else {
           await this._call('homebasket/photo/delete', { code });
           this._photos.delete(code);

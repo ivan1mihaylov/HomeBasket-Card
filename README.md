@@ -68,13 +68,21 @@ Products are shown with a picture wherever one is available:
 
 - **Automatically** — the integration stores the product image Open Food Facts
   returns, and the card loads it from there.
-- **Your own** — tap a product's thumbnail (or the pencil), then
-  *Take or upload a photo*. On a phone that opens the camera; on a desktop it
-  opens the file picker. The photo is scaled down in the browser before it is
-  sent, and Home Assistant keeps it in its own storage — it is never served
-  from a public path.
+- **Your own** — tap a product's thumbnail (or the pencil) and press the square
+  camera button. On a phone that opens the camera; on a desktop it opens the
+  file picker. The photo is scaled down in the browser before it is sent, and
+  Home Assistant keeps it in its own storage — it is never served from a
+  public path.
 
-A product with neither shows a placeholder icon.
+The picture replaces the button once there is one; the ✕ in its corner clears
+it and brings the button back. Nothing is written until you press **Save**, so
+you can back out of any change with **Cancel**.
+
+**Look up again**, at the bottom of the sheet, re-queries Open Food Facts and
+refills the name, category and picture — useful when a product has been
+improved in the database since you first scanned it, or after you renamed it by
+hand and want the original back. It only fills the fields in; the save still
+has to be confirmed.
 
 ## How a scan flows
 
