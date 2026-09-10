@@ -1,14 +1,33 @@
-The photo control in the product sheet is now a large square button. Once there
-is a picture it takes the button's place at the same size, with a ✕ in its
-corner that clears it and brings the button back.
+A product can now hold more than one barcode, and there is a details page for
+everything Open Food Facts knows about it.
 
-Nothing about the photo is written until you press **Save** — clearing a
-picture and pressing **Cancel** leaves it untouched.
+### More than one barcode per product
 
-New: **Look up again** at the bottom of the sheet re-queries Open Food Facts
-and refills the name, category and picture, for products that have been
-improved in the database since you scanned them. It only fills the fields in;
-you still confirm with Save.
+The same yoghurt in a 400 g and a 900 g tub carries two barcodes but belongs on
+a shopping list once. When a scan creates a product that resembles one you
+already have, the sheet opens with the look-alikes at the bottom — pick one and
+the scanned barcode joins it. A scan with nothing similar opens nothing, so the
+one-beep path is untouched.
 
-Needs [HomeBasket](https://github.com/ivan1mihaylov/HomeBasket) 0.3.0 or newer —
-clearing a picture requires the newer save API.
+Matching compares the words of the name and brand, ignores sizes, and weighs
+each word by how many products already use it: in a fridge full of "мляко
+Верея" what identifies a product is "кисело". The edit sheet lists a product's
+barcodes and can detach any but the first.
+
+### Product details
+
+Tapping a product's name opens Nutri-Score, NOVA and Eco-Score, the nutrition
+table per 100 g, ingredients, allergens, labels, packaging, origin and where it
+sells, with a link to its Open Food Facts page. The record comes from the
+integration's cache, so opening a product makes no network request; only **Look
+up again** re-fetches it.
+
+### Also
+
+- Every card in the recent scans strip can be dismissed on its own. It clears
+  the scan only — a saved product keeps its place in the list below
+- The photo control is a square button that the picture replaces at the same
+  size, with a ✕ to clear it; nothing is written until Save
+- **Look up again** in the edit sheet refills name, category and picture
+
+Needs [HomeBasket](https://github.com/ivan1mihaylov/HomeBasket) 0.5.0.
