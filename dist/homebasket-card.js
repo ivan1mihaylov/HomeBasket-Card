@@ -53,6 +53,7 @@ const TRANSLATIONS = {
     lookingUp: 'Looking the barcode up…',
     lookedUp: 'Updated from Open Food Facts',
     lookupEmpty: 'Open Food Facts does not know this barcode.',
+    dismissScan: 'Remove from recent scans',
     details: 'Product details',
     loading: 'Loading…',
     noDetails:
@@ -158,6 +159,7 @@ const TRANSLATIONS = {
     lookingUp: 'Търсене на баркода…',
     lookedUp: 'Обновено от Open Food Facts',
     lookupEmpty: 'Open Food Facts не познава този баркод.',
+    dismissScan: 'Премахни от сканиранията',
     details: 'Информация за продукта',
     loading: 'Зареждане…',
     noDetails:
@@ -400,6 +402,7 @@ const STYLES = `
   .strip::-webkit-scrollbar-thumb { background: var(--hb-line); border-radius: 4px; }
 
   .scan-card {
+    position: relative;
     flex: 0 0 auto;
     width: 150px;
     box-sizing: border-box;
@@ -425,8 +428,22 @@ const STYLES = `
     line-height: 1.25;
     overflow-wrap: anywhere;
   }
+  .scan-card .dismiss {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--hb-muted);
+  }
+  .scan-card .dismiss:hover { color: var(--hb-danger); background: var(--hb-sunken); }
+  .scan-card .dismiss svg { width: 14px; height: 14px; }
   .scan-card .tag {
     align-self: flex-start;
+    max-width: calc(100% - 26px);
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -1473,6 +1490,26 @@ class HomeBasketCard extends HTMLElement {
     await this._refresh();
   }
 
+  /**
+   * Clear one card from the recent scans.
+   *
+   * A scan waiting to be named lives in the integration, so it has to be
+   * dismissed there; anything else is only in this card's own list.
+   */
+  async _dismissScan(item) {
+    this._recent = this._recent.filter((entry) => entry.code !== item.code);
+    if (!item.needsName) {
+      this._render();
+      return;
+    }
+    try {
+      await this._call('homebasket/pending/dismiss', { code: item.code });
+    } catch (err) {
+      toast(this.shadowRoot, err.message || this._t.scanFailed, true);
+    }
+    await this._refresh();
+  }
+
   async _addToList(item) {
     const t = this._t;
     try {
@@ -1816,12 +1853,27 @@ class HomeBasketCard extends HTMLElement {
   _renderRecent(items, t) {
     const strip = el('div', { class: 'strip' });
 
+    // Dismissing a scan only clears it from this strip. A product that was
+    // already saved keeps its entry in the list below.
+    const dismiss = (item) =>
+      el(
+        'button',
+        {
+          class: 'dismiss',
+          title: t.dismissScan,
+          'aria-label': t.dismissScan,
+          on: { click: () => this._dismissScan(item) },
+        },
+        icon('close'),
+      );
+
     for (const item of items) {
       if (item.needsName) {
         strip.appendChild(
           el(
             'div',
             { class: 'scan-card' },
+            dismiss(item),
             el('span', { class: 'tag muted', text: t.unknown }),
             el('div', { class: 'code', text: item.code }),
             el('button', {
@@ -1843,6 +1895,7 @@ class HomeBasketCard extends HTMLElement {
         el(
           'div',
           { class: item.added ? 'scan-card done' : 'scan-card' },
+          dismiss(item),
           tag,
           el('div', { class: 'name', text: item.name || item.code }),
           barcodeGlyph(item.code),
