@@ -84,6 +84,24 @@ improved in the database since you first scanned it, or after you renamed it by
 hand and want the original back. It only fills the fields in; the save still
 has to be confirmed.
 
+## More than one barcode per product
+
+The same yoghurt in a 400 g and a 900 g tub carries two barcodes but is one
+line on a shopping list. Scanning either one resolves to the same product, and
+editing it through either barcode edits the same entry.
+
+When a scan creates a product that resembles one you already have, the sheet
+opens with the look-alikes listed at the bottom. Pick one and the scanned
+barcode joins it; ignore them and you get two separate products. A scan with
+nothing similar in the list never opens anything — it stays the one-beep path.
+
+Matching compares the words of the name and brand, ignoring sizes, and weighs
+each word by how many products already use it: in a fridge full of "мляко
+Верея", what identifies a product is "кисело". So a 900 g tub finds the 400 g
+one without matching every other dairy item.
+
+The edit sheet lists a product's barcodes, each detachable except the first.
+
 ## Product details
 
 Tapping a product's name opens everything Open Food Facts knows about it:

@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -54,6 +54,15 @@ const TRANSLATIONS = {
     lookedUp: 'Updated from Open Food Facts',
     lookupEmpty: 'Open Food Facts does not know this barcode.',
     dismissScan: 'Remove from recent scans',
+    similar: 'Similar products',
+    similarHint:
+      'Already have this product under another barcode? Pick it and the ' +
+      'scanned code is added to it.',
+    barcodes: 'Barcodes',
+    codeCount: (n) => `${n} barcode${n === 1 ? '' : 's'}`,
+    linkedTo: (name) => `Barcode added to ${name}`,
+    unlink: 'Detach this barcode',
+    unlinked: 'Barcode detached',
     details: 'Product details',
     loading: 'Loading…',
     noDetails:
@@ -160,6 +169,15 @@ const TRANSLATIONS = {
     lookedUp: 'Обновено от Open Food Facts',
     lookupEmpty: 'Open Food Facts не познава този баркод.',
     dismissScan: 'Премахни от сканиранията',
+    similar: 'Сходни продукти',
+    similarHint:
+      'Вече имаш този продукт под друг баркод? Натисни го и сканираният код ' +
+      'се добавя към него.',
+    barcodes: 'Баркодове',
+    codeCount: (n) => `${n} ${n === 1 ? 'баркод' : 'баркода'}`,
+    linkedTo: (name) => `Баркодът е добавен към ${name}`,
+    unlink: 'Откачи този баркод',
+    unlinked: 'Баркодът е откачен',
     details: 'Информация за продукта',
     loading: 'Зареждане…',
     noDetails:
@@ -572,6 +590,46 @@ const STYLES = `
   .dialog .actions { display: flex; justify-content: flex-end; gap: 8px; padding: 6px 18px 18px; }
   .dialog .hint { font-size: 0.8125rem; color: var(--hb-muted); margin: 0 0 12px; }
 
+  .code-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .code-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 8px 7px 12px;
+    border-radius: 10px;
+    background: var(--hb-sunken);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8125rem;
+  }
+  .code-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .code-list .first { color: var(--hb-muted); font-family: inherit; font-size: 0.6875rem; }
+  .code-list button { color: var(--hb-muted); padding: 4px; }
+  .code-list button:hover { color: var(--hb-danger); }
+  .code-list button svg { width: 15px; height: 15px; }
+
+  .similar { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--hb-line); }
+  .similar > p { font-size: 0.8125rem; color: var(--hb-muted); margin: 0 0 10px; }
+  .similar .option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    border: 1px solid var(--hb-line);
+    border-radius: 12px;
+    background: var(--hb-raised);
+    text-align: start;
+  }
+  .similar .option:hover { border-color: var(--hb-accent); }
+  .similar .option .thumb { width: 34px; height: 34px; border-radius: 9px; cursor: inherit; }
+  .similar .option .thumb svg { width: 17px; height: 17px; }
+  .similar .option .who { min-width: 0; flex: 1 1 auto; }
+  .similar .option .who .name { font-size: 0.875rem; font-weight: 600; overflow-wrap: anywhere; }
+  .similar .option .who .meta { font-size: 0.6875rem; color: var(--hb-muted); }
+
   .photo-box { position: relative; width: 124px; height: 124px; margin-bottom: 16px; }
   .photo-add {
     width: 100%;
@@ -839,6 +897,63 @@ function barcodeGlyph(code) {
   }
   svg.setAttribute('viewBox', `0 0 ${x} 10`);
   return svg;
+}
+
+/** Split a product name into the words worth comparing. */
+function tokenize(text) {
+  return new Set(
+    String(text || '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .split(' ')
+      // Sizes are what separates variants of the same product, so they are
+      // exactly what must not count: short words, bare numbers, and numbers
+      // carrying a unit like 400g, 750ml or 1l.
+      .filter((word) => word.length > 2 && !/^\d+\p{L}{0,3}$/u.test(word)),
+  );
+}
+
+/**
+ * Products that look like the same thing under a different barcode.
+ *
+ * Compares the words of the name and brand, so "Кисело мляко Верея 400 г"
+ * finds "Кисело мляко Верея 900 г" without matching every other yoghurt.
+ */
+function similarProducts(name, brand, products, { exclude, limit = 4 } = {}) {
+  const wanted = tokenize([name, brand].filter(Boolean).join(' '));
+  if (!wanted.size) return [];
+
+  // Words shared by many products say little about identity. In a fridge full
+  // of "мляко Верея", what distinguishes a product is "кисело" - so each word
+  // counts for less the more products already use it.
+  const seen = new Map();
+  const catalogue = products.map((product) => {
+    const words = tokenize([product.name, product.brand].filter(Boolean).join(' '));
+    for (const word of words) seen.set(word, (seen.get(word) || 0) + 1);
+    return { product, words };
+  });
+  const weigh = (word) => 1 / (1 + (seen.get(word) || 0));
+  const total = (words) => [...words].reduce((sum, word) => sum + weigh(word), 0);
+
+  const scored = [];
+  for (const { product, words } of catalogue) {
+    if (product.code === exclude || !words.size) continue;
+
+    const shared = [...wanted].filter((word) => words.has(word));
+    if (!shared.length) continue;
+
+    // Weighted Jaccard, lifted when one name spells out everything the other
+    // does - a smaller pack usually differs only by its size.
+    const union = total(new Set([...wanted, ...words]));
+    const contained = shared.length === wanted.size || shared.length === words.size;
+    const score = total(shared) / union + (contained ? 0.25 : 0);
+    if (score >= 0.45) scored.push({ product, score });
+  }
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((entry) => entry.product);
 }
 
 /** One of the Open Food Facts score badges. */
@@ -1268,12 +1383,15 @@ class HomeBasketCard extends HTMLElement {
 
       if (result.status === 'unknown' && !result.name) {
         await this._openProductDialog(code, null);
-      } else if (result.already_on_list) {
-        toast(this.shadowRoot, t.alreadyOnList(result.name));
-      } else if (result.added) {
-        toast(this.shadowRoot, t.addedToList(result.name));
       } else {
-        toast(this.shadowRoot, t.savedAs(result.name));
+        if (result.already_on_list) toast(this.shadowRoot, t.alreadyOnList(result.name));
+        else if (result.added) toast(this.shadowRoot, t.addedToList(result.name));
+        else toast(this.shadowRoot, t.savedAs(result.name));
+
+        // Open Food Facts just created this one. If the shelf already holds
+        // what looks like the same thing under another barcode, say so now -
+        // otherwise stay out of the way.
+        if (result.status === 'looked_up') await this._offerMerge(result);
       }
     } catch (err) {
       toast(this.shadowRoot, err.message || t.scanFailed, true);
@@ -1288,9 +1406,12 @@ class HomeBasketCard extends HTMLElement {
    * Open the product sheet: name, category and photo.
    * `existing` is null for a code that has just been scanned.
    */
-  async _openProductDialog(code, existing) {
+  async _openProductDialog(code, existing, options = {}) {
     const t = this._t;
     const isNew = !existing;
+    // A product Open Food Facts has just created is not "new" for the form -
+    // it already has a name - but it should still offer a merge.
+    const { offerSimilar = isNew, title = null } = options;
 
     // Two separate sources: a photo stored on this Home Assistant, and the
     // picture Open Food Facts supplied. A local one wins when both exist.
@@ -1311,7 +1432,7 @@ class HomeBasketCard extends HTMLElement {
       };
 
       openDialog(this.shadowRoot, {
-        title: isNew ? t.newProduct : t.editProduct,
+        title: title || (isNew ? t.newProduct : t.editProduct),
         build: (content, close) => {
           content.appendChild(
             el('p', {
@@ -1435,6 +1556,99 @@ class HomeBasketCard extends HTMLElement {
           };
 
           content.append(el('label', { text: t.photo }), box, file);
+
+          // Every barcode of this product, each detachable but the first.
+          if (existing?.codes?.length > 1) {
+            const list = el('ul');
+            for (const [index, entry] of existing.codes.entries()) {
+              list.appendChild(
+                el(
+                  'li',
+                  {},
+                  el('span', { text: entry }),
+                  index === 0
+                    ? el('span', { class: 'first', text: t.barcodes })
+                    : el(
+                        'button',
+                        {
+                          title: t.unlink,
+                          'aria-label': t.unlink,
+                          on: { click: () => this._unlinkCode(entry, close) },
+                        },
+                        icon('close'),
+                      ),
+                ),
+              );
+            }
+            content.append(
+              el('label', { text: t.barcodes }),
+              el('div', { class: 'code-list' }, list),
+            );
+          }
+
+          // Products this one might be another barcode of. Rebuilt as the
+          // name is typed, so it works whether the name came from Open Food
+          // Facts or from the keyboard.
+          if (offerSimilar) {
+            const suggestions = el('div');
+            content.appendChild(suggestions);
+
+            const drawSimilar = () => {
+              const matches = similarProducts(
+                nameInput.value,
+                existing?.brand,
+                this._state.mappings,
+                { exclude: existing?.code || code },
+              );
+              if (!matches.length) {
+                suggestions.replaceChildren();
+                return;
+              }
+
+              const section = el(
+                'div',
+                { class: 'similar' },
+                el('h4', { text: t.similar }),
+                el('p', { text: t.similarHint }),
+              );
+              for (const match of matches) {
+                const thumb = el('div', { class: 'thumb' });
+                const image = el('img', { alt: '', hidden: true });
+                thumb.append(image, icon('image'));
+                if (match.has_photo) this._fillPhoto(match.code, image);
+                else if (match.image) {
+                  image.src = match.image;
+                  image.hidden = false;
+                }
+
+                section.appendChild(
+                  el(
+                    'button',
+                    {
+                      class: 'option',
+                      on: { click: () => this._linkCode(code, match, close) },
+                    },
+                    thumb,
+                    el(
+                      'div',
+                      { class: 'who' },
+                      el('div', { class: 'name', text: match.name }),
+                      el('div', {
+                        class: 'meta',
+                        text: [match.category, t.codeCount(match.codes?.length || 1)]
+                          .filter(Boolean)
+                          .join(' · '),
+                      }),
+                    ),
+                  ),
+                );
+              }
+              suggestions.replaceChildren(section);
+            };
+
+            nameInput.addEventListener('input', drawSimilar);
+            drawSimilar();
+          }
         },
         buttons: [
           { label: t.lookUpAgain, start: true, onClick: () => reanalyse() },
@@ -1506,6 +1720,55 @@ class HomeBasketCard extends HTMLElement {
       await this._call('homebasket/pending/dismiss', { code: item.code });
     } catch (err) {
       toast(this.shadowRoot, err.message || this._t.scanFailed, true);
+    }
+    await this._refresh();
+  }
+
+  /**
+   * Show the product sheet when a newly created product resembles one that
+   * already exists, so the two can be merged into one with two barcodes.
+   */
+  async _offerMerge(result) {
+    await this._refresh();
+    const product = this._state.mappings.find(
+      (entry) => entry.code === (result.product_code || result.code),
+    );
+    if (!product) return;
+
+    const matches = similarProducts(product.name, product.brand, this._state.mappings, {
+      exclude: product.code,
+    });
+    if (!matches.length) return;
+
+    await this._openProductDialog(product.code, product, {
+      offerSimilar: true,
+      title: this._t.newProduct,
+    });
+  }
+
+  /** Attach a freshly scanned barcode to a product that already exists. */
+  async _linkCode(code, product, close) {
+    const t = this._t;
+    close();
+    try {
+      await this._call('homebasket/alias/add', { code, product: product.code });
+      toast(this.shadowRoot, t.linkedTo(product.name));
+    } catch (err) {
+      toast(this.shadowRoot, err.message || t.scanFailed, true);
+    }
+    this._recent = this._recent.filter((entry) => entry.code !== code);
+    await this._refresh();
+  }
+
+  /** Detach one barcode, leaving the product and its other barcodes alone. */
+  async _unlinkCode(code, close) {
+    const t = this._t;
+    close();
+    try {
+      await this._call('homebasket/alias/remove', { code });
+      toast(this.shadowRoot, t.unlinked);
+    } catch (err) {
+      toast(this.shadowRoot, err.message || t.scanFailed, true);
     }
     await this._refresh();
   }
@@ -1604,6 +1867,7 @@ class HomeBasketCard extends HTMLElement {
 
   _renderDetails(details, item, t) {
     const rows = [
+      [t.barcodes, item.codes?.length > 1 ? item.codes.join(', ') : null],
       [t.fieldBrand, details.brands?.join(', ') || details.brand],
       [t.fieldQuantity, details.quantity],
       [t.fieldServing, details.serving_size],
@@ -2019,7 +2283,13 @@ class HomeBasketCard extends HTMLElement {
           },
         },
         el('div', { class: 'name', text: item.name || item.code }),
-        el('div', { class: 'code', text: item.code }),
+        el('div', {
+          class: 'code',
+          text:
+            item.codes?.length > 1
+              ? `${item.code} · +${item.codes.length - 1}`
+              : item.code,
+        }),
       ),
       side,
     );
