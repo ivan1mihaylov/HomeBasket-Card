@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -468,7 +468,7 @@ const STYLES = `
   .photo-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
   .photo-row .thumb { width: 64px; height: 64px; border-radius: 14px; cursor: default; }
   .photo-row .photo-buttons { display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; min-width: 0; }
-  .photo-row input[type='file'] { display: none; }
+  .dialog input[type='file'] { display: none; }
 
   /* Camera ------------------------------------------------------------ */
   .camera { position: relative; background: #000; border-radius: 12px; overflow: hidden; }
