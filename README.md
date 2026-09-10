@@ -55,6 +55,8 @@ title: Shopping
 | `title` | translated | Card heading. |
 | `language` | Home Assistant's | `bg` or `en`. Leave empty to follow the Home Assistant language. |
 | `add_on_scan` | `true` | Put recognised products on the shopping list immediately. Turn off to only build the product dictionary. |
+| `open_known` | `true` | Scanning a barcode HomeBasket already knows opens that product, so it can be checked or corrected on the spot. |
+| `scan_on_open` | `false` | Open the camera as soon as the card is shown. For a card on its own view — see the home screen shortcut below. |
 | `show_recent` | `true` | Show the strip of recent scans and codes waiting for a name. |
 | `show_products` | `true` | Show the list of learned products. |
 | `zxing_url` | `null` | Only for browsers without a built-in barcode detector — see below. |
@@ -130,7 +132,31 @@ only thing that goes back out to Open Food Facts.
 ```
 
 The second scan of the same product never asks again — it goes straight to the
-list, offline.
+list, offline, and the product opens so its name, category or photo can be
+corrected while it is in your hand. Turn `open_known` off to keep scanning
+without interruption.
+
+The same barcode read as UPC-A (twelve digits) and as EAN-13 (the same digits
+with a leading zero) is one product, whichever reading your scanner reports.
+
+## A shortcut on the phone's home screen
+
+One tap from the home screen to the camera, without going through the app:
+
+1. Make a dashboard view holding only this card, with `scan_on_open: true`.
+   Opening the view is then the same as opening the camera.
+2. Point a home screen shortcut at that view:
+   - **Android** — Companion app → Settings → Companion app → Manage shortcuts
+     → add one with the view's path (`/lovelace/scan`), then long-press the
+     Home Assistant icon on the home screen and drag the shortcut out.
+   - **iOS** — Shortcuts app → new shortcut → *Open URL* with
+     `homeassistant://navigate/lovelace/scan` → share it to the home screen.
+
+A dashboard you use for other things works too: put `?homebasket=scan` on the
+end of the shortcut's path and the card opens the camera once, on arrival.
+
+If the browser refuses the camera because nothing on the page was tapped, the
+dialog says so and offers a button to open it — one tap instead of none.
 
 ## Camera support
 

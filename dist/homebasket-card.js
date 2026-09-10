@@ -125,6 +125,7 @@ const TRANSLATIONS = {
     cameraDenied:
       'Camera access was denied. Allow it for Home Assistant and try again.',
     cameraFailed: (message) => `Could not start the camera: ${message}`,
+    cameraRetry: 'Open the camera',
     cameraInsecure:
       'The camera needs a secure connection. Open Home Assistant over HTTPS.',
     cameraUnsupported: 'This browser does not give web pages access to the camera.',
@@ -240,6 +241,7 @@ const TRANSLATIONS = {
     cameraDenied:
       'Достъпът до камерата е отказан. Разреши го за Home Assistant и опитай пак.',
     cameraFailed: (message) => `Камерата не тръгна: ${message}`,
+    cameraRetry: 'Отвори камерата',
     cameraInsecure:
       'Камерата изисква защитена връзка. Отвори Home Assistant през HTTPS.',
     cameraUnsupported: 'Този браузър не дава достъп до камерата на уеб страници.',
@@ -1193,12 +1195,20 @@ function scanWithCamera(root, config, t) {
       build: (content, close) => {
         const video = el('video', { playsinline: true, muted: true, autoplay: true });
         const status = el('p', { class: 'hint', text: t.cameraStarting });
+        // Opened from a home screen shortcut there is no tap on the page
+        // itself, and some browsers only hand over the camera after one, so
+        // a failed start offers the tap rather than being a dead end.
+        const retry = el('button', { class: 'btn block', text: t.cameraRetry, hidden: true });
         content.append(
           el('div', { class: 'camera' }, video, el('div', { class: 'reticle' })),
           status,
+          retry,
         );
 
-        (async () => {
+        const start = async () => {
+          stop();
+          retry.hidden = true;
+          status.textContent = t.cameraStarting;
           try {
             stream = await navigator.mediaDevices.getUserMedia({
               video: { facingMode: { ideal: 'environment' } },
@@ -1218,6 +1228,7 @@ function scanWithCamera(root, config, t) {
               } catch (err) {
                 clearInterval(timer);
                 status.textContent = t.cameraFailed(err.message);
+                retry.hidden = false;
                 return;
               }
               if (code) {
@@ -1228,8 +1239,12 @@ function scanWithCamera(root, config, t) {
           } catch (err) {
             status.textContent =
               err.name === 'NotAllowedError' ? t.cameraDenied : t.cameraFailed(err.message);
+            retry.hidden = false;
           }
-        })();
+        };
+
+        retry.addEventListener('click', start);
+        start();
 
         return stop; // Runs when the dialog is dismissed.
       },
@@ -1242,10 +1257,36 @@ function scanWithCamera(root, config, t) {
  * The card
  * ------------------------------------------------------------------ */
 
+/**
+ * A home screen shortcut can open a dashboard with ?homebasket=scan on the
+ * end, and the first card on the page goes straight to the camera - one tap
+ * from the phone's home screen to a barcode.
+ *
+ * The flag is read once and wiped from the address, so moving around the
+ * dashboard afterwards does not keep reopening the camera.
+ */
+function consumeScanRequest() {
+  try {
+    const url = new URL(window.location.href);
+    const asked =
+      url.searchParams.get('homebasket') === 'scan' || url.hash === '#homebasket-scan';
+    if (!asked) return false;
+
+    url.searchParams.delete('homebasket');
+    if (url.hash === '#homebasket-scan') url.hash = '';
+    window.history.replaceState(window.history.state, '', url.toString());
+    return true;
+  } catch {
+    return false; // No address to read: nothing was asked for.
+  }
+}
+
 const DEFAULT_CONFIG = {
   title: null,
   language: null,
   add_on_scan: true,
+  open_known: true,
+  scan_on_open: false,
   show_recent: true,
   show_products: true,
   zxing_url: null,
@@ -1322,6 +1363,11 @@ class HomeBasketCard extends HTMLElement {
       () => this._refresh(),
       'homebasket_updated',
     );
+
+    // A card sitting on its own view is the scanner, so opening the view is
+    // opening the camera. The address does the same for a shortcut pointing
+    // at a dashboard that is used for other things too.
+    if (this._config.scan_on_open || consumeScanRequest()) this._openCamera();
   }
 
   async _refresh() {
@@ -1392,6 +1438,7 @@ class HomeBasketCard extends HTMLElement {
         // what looks like the same thing under another barcode, say so now -
         // otherwise stay out of the way.
         if (result.status === 'looked_up') await this._offerMerge(result);
+        else if (result.status === 'known') await this._openKnown(result);
       }
     } catch (err) {
       toast(this.shadowRoot, err.message || t.scanFailed, true);
@@ -1724,15 +1771,41 @@ class HomeBasketCard extends HTMLElement {
     await this._refresh();
   }
 
+  /** The product a barcode belongs to, whichever of its barcodes it is. */
+  _findProduct(code) {
+    if (!code) return null;
+    const wanted = String(code);
+    return (
+      this._state.mappings.find((entry) => entry.code === wanted) ||
+      this._state.mappings.find((entry) => entry.codes?.includes(wanted)) ||
+      null
+    );
+  }
+
+  /**
+   * A barcode the shelf already knows opens the product itself, rather than
+   * only saying its name and leaving you to find it in the list below. The
+   * scan is already in the strip and on the shopping list by now.
+   */
+  async _openKnown(result) {
+    if (!this._config.open_known) return;
+    await this._refresh();
+    const product = this._findProduct(result.product_code || result.code);
+    if (!product) return;
+
+    await this._openProductDialog(product.code, product, {
+      offerSimilar: false,
+      title: this._t.editProduct,
+    });
+  }
+
   /**
    * Show the product sheet when a newly created product resembles one that
    * already exists, so the two can be merged into one with two barcodes.
    */
   async _offerMerge(result) {
     await this._refresh();
-    const product = this._state.mappings.find(
-      (entry) => entry.code === (result.product_code || result.code),
-    );
+    const product = this._findProduct(result.product_code || result.code);
     if (!product) return;
 
     const matches = similarProducts(product.name, product.brand, this._state.mappings, {
@@ -1855,8 +1928,7 @@ class HomeBasketCard extends HTMLElement {
           label: t.edit,
           onClick: (close) => {
             close();
-            const current =
-              this._state.mappings.find((entry) => entry.code === code) || item;
+            const current = this._findProduct(code) || item;
             this._openProductDialog(code, current);
           },
         },
@@ -2309,6 +2381,17 @@ const EDITOR_FIELDS = [
     hint: 'bg or en. Empty follows the Home Assistant language.',
   },
   { key: 'add_on_scan', label: 'Add scanned products to the shopping list', type: 'boolean' },
+  {
+    key: 'open_known',
+    label: 'Open the product when a barcode is already known',
+    type: 'boolean',
+  },
+  {
+    key: 'scan_on_open',
+    label: 'Open the camera as soon as this card is shown',
+    type: 'boolean',
+    hint: 'For a card on its own view, so a home screen shortcut goes straight to the camera.',
+  },
   { key: 'show_recent', label: 'Show recent scans', type: 'boolean' },
   { key: 'show_products', label: 'Show the known products list', type: 'boolean' },
   {
