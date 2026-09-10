@@ -1,33 +1,16 @@
-A product can now hold more than one barcode, and there is a details page for
-everything Open Food Facts knows about it.
+**One tap from the phone's home screen to the camera.** A card can now open the
+camera the moment it is shown (`scan_on_open`), so a dashboard view holding
+only this card *is* the scanner — point a home screen shortcut at that view and
+scanning is one tap away. A dashboard used for other things works too: put
+`?homebasket=scan` on the end of the shortcut's address. The README has the
+Android and iOS steps. When a browser refuses the camera because nothing on the
+page was tapped, the dialog now offers a button instead of being a dead end.
 
-### More than one barcode per product
+**A known barcode opens its product.** Scanning something HomeBasket already
+knows opens that product, so its name, category or photo can be corrected while
+it is in your hand, instead of naming it in a passing message. The scan is in
+the recent strip and on the shopping list either way. `open_known: false` turns
+it off for uninterrupted scanning.
 
-The same yoghurt in a 400 g and a 900 g tub carries two barcodes but belongs on
-a shopping list once. When a scan creates a product that resembles one you
-already have, the sheet opens with the look-alikes at the bottom — pick one and
-the scanned barcode joins it. A scan with nothing similar opens nothing, so the
-one-beep path is untouched.
-
-Matching compares the words of the name and brand, ignores sizes, and weighs
-each word by how many products already use it: in a fridge full of "мляко
-Верея" what identifies a product is "кисело". The edit sheet lists a product's
-barcodes and can detach any but the first.
-
-### Product details
-
-Tapping a product's name opens Nutri-Score, NOVA and Eco-Score, the nutrition
-table per 100 g, ingredients, allergens, labels, packaging, origin and where it
-sells, with a link to its Open Food Facts page. The record comes from the
-integration's cache, so opening a product makes no network request; only **Look
-up again** re-fetches it.
-
-### Also
-
-- Every card in the recent scans strip can be dismissed on its own. It clears
-  the scan only — a saved product keeps its place in the list below
-- The photo control is a square button that the picture replaces at the same
-  size, with a ✕ to clear it; nothing is written until Save
-- **Look up again** in the edit sheet refills name, category and picture
-
-Needs [HomeBasket](https://github.com/ivan1mihaylov/HomeBasket) 0.5.0.
+Needs HomeBasket 0.6.0, which is what makes the same barcode read as UPC-A and
+as EAN-13 one product rather than two.
