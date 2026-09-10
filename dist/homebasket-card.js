@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 
 /** Styles for the HomeBasket card. Plain CSS, no Home Assistant components. */
 
@@ -26,6 +26,9 @@ const STYLES = `
     --hb-surface: var(--card-background-color, #fff);
     --hb-sunken: color-mix(in srgb, var(--hb-fg) 6%, transparent);
     display: block;
+    /* The editor renders without the .card wrapper, so the text colour has to
+       come from the host or it falls back to the browser default. */
+    color: var(--hb-fg);
   }
 
   .card {
@@ -176,10 +179,46 @@ const STYLES = `
   td.actions button.danger:hover svg { fill: var(--hb-danger); }
 
   .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
     padding: 24px 8px;
     text-align: center;
     color: var(--hb-muted);
     font-size: 0.875rem;
+  }
+  .empty p { margin: 0; max-width: 38ch; }
+
+  /* Visual editor */
+  .editor { display: flex; flex-direction: column; gap: 16px; padding: 8px 0; }
+  .editor .field { display: flex; flex-direction: column; gap: 6px; }
+  .editor .field > span { font-size: 0.8125rem; color: var(--hb-muted); }
+  .editor .field small { font-size: 0.75rem; color: var(--hb-muted); }
+  .editor input[type='text'] {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    font-size: 1rem;
+    color: var(--hb-fg);
+    background: var(--hb-sunken);
+    border: 1px solid var(--hb-line);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .editor .toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9375rem;
+    cursor: pointer;
+  }
+  .editor .toggle input {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    accent-color: var(--hb-accent);
   }
 
   .pending li {
@@ -807,9 +846,14 @@ class HomeBasketCard extends HTMLElement {
       this._state = await this._call('homebasket/state');
       this._error = null;
     } catch (err) {
+      // 'unknown_command' means the integration never registered its
+      // WebSocket API, which in practice means it is not set up at all.
       this._error =
-        err?.message ||
-        'HomeBasket is not set up. Add the integration under Settings → Devices & Services.';
+        err?.code === 'unknown_command'
+          ? 'The HomeBasket integration is not set up yet. Add it under ' +
+            'Settings → Devices & Services → Add Integration → HomeBasket, ' +
+            'then reload this page.'
+          : err?.message || 'HomeBasket did not answer.';
     }
     this._render();
   }
@@ -969,7 +1013,18 @@ class HomeBasketCard extends HTMLElement {
     this._body.replaceChildren();
 
     if (this._error) {
-      this._body.appendChild(el('div', { class: 'empty', text: this._error }));
+      this._body.appendChild(
+        el(
+          'div',
+          { class: 'empty' },
+          el('p', { text: this._error }),
+          el('button', {
+            class: 'btn',
+            text: 'Try again',
+            on: { click: () => this._refresh() },
+          }),
+        ),
+      );
       return;
     }
 
@@ -1064,7 +1119,12 @@ const EDITOR_FIELDS = [
   { key: 'add_on_scan', label: 'Add scanned products to the shopping list', type: 'boolean' },
   { key: 'show_table', label: 'Show the known products table', type: 'boolean' },
   { key: 'show_pending', label: 'Show codes waiting for a name', type: 'boolean' },
-  { key: 'zxing_url', label: 'ZXing URL (only for browsers without a barcode detector)', type: 'text' },
+  {
+    key: 'zxing_url',
+    label: 'ZXing URL',
+    type: 'text',
+    hint: 'Only needed on browsers without a built-in barcode detector, such as Safari and iOS.',
+  },
 ];
 
 class HomeBasketCardEditor extends HTMLElement {
@@ -1098,23 +1158,33 @@ class HomeBasketCardEditor extends HTMLElement {
     const style = document.createElement('style');
     style.textContent = STYLES;
 
-    const content = el('div', { class: 'body' });
+    const content = el('div', { class: 'editor' });
     for (const field of EDITOR_FIELDS) {
       const value = this._config[field.key];
+
       if (field.type === 'boolean') {
         const input = el('input', { type: 'checkbox' });
         input.checked = Boolean(value);
         input.addEventListener('change', () => this._update(field.key, input.checked));
         content.appendChild(
-          el('label', { class: 'hint' }, input, document.createTextNode(` ${field.label}`)),
+          el('label', { class: 'toggle' }, input, el('span', { text: field.label })),
         );
-      } else {
-        const input = el('input', { type: 'text', value: value ?? '' });
-        input.addEventListener('change', () =>
-          this._update(field.key, input.value.trim() || null),
-        );
-        content.append(el('label', { text: field.label }), input);
+        continue;
       }
+
+      const input = el('input', { type: 'text', value: value ?? '' });
+      input.addEventListener('change', () =>
+        this._update(field.key, input.value.trim() || null),
+      );
+      content.appendChild(
+        el(
+          'label',
+          { class: 'field' },
+          el('span', { text: field.label }),
+          input,
+          field.hint ? el('small', { text: field.hint }) : null,
+        ),
+      );
     }
 
     this.shadowRoot.replaceChildren(style, content);

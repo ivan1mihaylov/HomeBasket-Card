@@ -36,7 +36,7 @@ Copy `dist/homebasket-card.js` to `config/www/homebasket/homebasket-card.js`
 and register it under **Settings → Dashboards → Resources**:
 
 ```
-URL:  /local/homebasket/homebasket-card.js?v=0.1.0
+URL:  /local/homebasket/homebasket-card.js?v=0.1.1
 Type: JavaScript Module
 ```
 
