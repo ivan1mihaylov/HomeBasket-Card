@@ -636,7 +636,14 @@ const STYLES = `
   .similar .option .who .name { font-size: 0.875rem; font-weight: 600; overflow-wrap: anywhere; }
   .similar .option .who .meta { font-size: 0.6875rem; color: var(--hb-muted); }
 
-  .photo-box { position: relative; width: 124px; height: 124px; margin-bottom: 16px; }
+  .photo-top { text-align: center; }
+  .photo-top label { display: block; }
+  .photo-box {
+    position: relative;
+    width: 124px;
+    height: 124px;
+    margin: 0 auto 16px;
+  }
   .photo-add {
     width: 100%;
     height: 100%;
@@ -1611,7 +1618,11 @@ class HomeBasketCard extends HTMLElement {
             }
           };
 
-          content.append(el('label', { text: t.photo }), box, file);
+          // The picture goes at the top of the sheet, in the middle of it,
+          // however far down the code that builds it happens to sit.
+          content.prepend(
+            el('div', { class: 'photo-top' }, el('label', { text: t.photo }), box, file),
+          );
 
           // Every barcode of this product, each detachable but the first.
           if (existing?.codes?.length > 1) {
