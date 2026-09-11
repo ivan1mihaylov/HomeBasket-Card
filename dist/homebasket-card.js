@@ -2319,7 +2319,11 @@ class HomeBasketCard extends HTMLElement {
       seen.add(item.code);
       scans.push(item);
     }
-    return [...pending, ...scans];
+    // Newest first, whichever kind it is: a code waiting for a name is as much
+    // a scan as a recognised one, and the last thing scanned is the one being
+    // looked for.
+    const when = (item) => Date.parse(item.timestamp || item.last_scanned || '') || 0;
+    return [...pending, ...scans].sort((a, b) => when(b) - when(a));
   }
 
   _renderRecent(items, t) {

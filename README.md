@@ -25,7 +25,7 @@ sub-modules that can get stuck in a browser cache.
 
 The recent scans shown here come from the integration, so a scan made anywhere —
 this card, a hardware scanner, the scan button on a list — shows up in the strip
-either way.
+either way, newest first.
 
 ## Languages
 
