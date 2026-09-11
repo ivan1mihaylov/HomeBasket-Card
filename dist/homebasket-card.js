@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.11.3';
+const VERSION = '0.11.4';
 
 /* ------------------------------------------------------------------ *
  * Translations
