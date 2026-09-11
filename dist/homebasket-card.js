@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.11.0';
+const VERSION = '0.11.1';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -61,6 +61,7 @@ const TRANSLATIONS = {
       produce: 'Greengrocer',
       butcher: 'Butcher',
       cosmetics: 'Cosmetics',
+      medicines: 'Medicines',
       pets: 'Pet shop',
       building: 'Building supplies',
     },
@@ -209,6 +210,7 @@ const TRANSLATIONS = {
       produce: 'Плод и зеленчук',
       butcher: 'Месарница',
       cosmetics: 'Парфюмерия и козметика',
+      medicines: 'Лекарства',
       pets: 'Домашни любимци',
       building: 'Строителни материали',
     },
@@ -1255,7 +1257,9 @@ const barcodesOf = (item) => (item?.codes || []).filter((code) => !isLocal(code)
 
 // The kinds of shop a product can belong to. The integration says which it
 // knows; this is only what to show when it is too old to say.
-const DEPARTMENTS = ['groceries', 'bakery', 'produce', 'butcher', 'cosmetics', 'pets', 'building'];
+const DEPARTMENTS = [
+  'groceries', 'bakery', 'produce', 'butcher', 'cosmetics', 'medicines', 'pets', 'building',
+];
 const DEFAULT_DEPARTMENT = 'groceries';
 
 // Where the integration publishes the reader it ships.
