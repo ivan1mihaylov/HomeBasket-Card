@@ -133,7 +133,11 @@ only thing that goes back out to Open Food Facts.
 
 The second scan of the same product never asks again — it goes straight to the
 list, offline, and lands in the recent strip, so one product after another can
-be scanned without stopping. Turn `open_known` on to have each known product
+be scanned without stopping. With
+[HomeBasket Lists](https://github.com/ivan1mihaylov/HomeBasket-Lists) as the
+shopping list, scanning something that is already on it counts one more of it
+and the card says so (*мляко в списъка: станаха 2*) rather than shrugging with
+"already on the list". Turn `open_known` on to have each known product
 open for editing instead.
 
 The same barcode read as UPC-A (twelve digits) and as EAN-13 (the same digits

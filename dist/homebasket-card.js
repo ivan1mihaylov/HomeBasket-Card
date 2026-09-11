@@ -33,9 +33,11 @@ const TRANSLATIONS = {
     added: 'Added',
     onList: 'On the list',
     recognised: 'Recognised',
+    counted: 'One more',
     unknown: 'Unknown',
     addedToList: (name) => `${name} added to the list`,
     alreadyOnList: (name) => `${name} is already on the list`,
+    countedUp: (name, count) => `${name} on the list: ${count} now`,
     savedAs: (name) => `Saved as ${name}`,
     noProducts: 'No products yet. Scan something to get started.',
     noMatch: 'No product matches this search.',
@@ -149,9 +151,11 @@ const TRANSLATIONS = {
     added: 'Добавено',
     onList: 'В списъка',
     recognised: 'Разпознат',
+    counted: 'Още едно',
     unknown: 'Непознат',
     addedToList: (name) => `${name} е добавен в списъка`,
     alreadyOnList: (name) => `${name} вече е в списъка`,
+    countedUp: (name, count) => `${name} в списъка: станаха ${count}`,
     savedAs: (name) => `Запазено като ${name}`,
     noProducts: 'Още няма продукти. Сканирай нещо, за да започнеш.',
     noMatch: 'Няма продукт по това търсене.',
@@ -1430,7 +1434,12 @@ class HomeBasketCard extends HTMLElement {
       if (result.status === 'unknown' && !result.name) {
         await this._openProductDialog(code, null);
       } else {
-        if (result.already_on_list) toast(this.shadowRoot, t.alreadyOnList(result.name));
+        // A list that counts what is on it says how many there are now; a
+        // plain to-do list can only say it is there.
+        if (result.increased)
+          toast(this.shadowRoot, t.countedUp(result.name, result.quantity ?? ''));
+        else if (result.already_on_list)
+          toast(this.shadowRoot, t.alreadyOnList(result.name));
         else if (result.added) toast(this.shadowRoot, t.addedToList(result.name));
         else toast(this.shadowRoot, t.savedAs(result.name));
 
@@ -1742,7 +1751,9 @@ class HomeBasketCard extends HTMLElement {
         }
       }
 
-      if (result.already_on_list) toast(this.shadowRoot, t.alreadyOnList(saved.name));
+      if (result.increased)
+        toast(this.shadowRoot, t.countedUp(saved.name, result.quantity ?? ''));
+      else if (result.already_on_list) toast(this.shadowRoot, t.alreadyOnList(saved.name));
       else if (result.added) toast(this.shadowRoot, t.addedToList(saved.name));
       else toast(this.shadowRoot, t.savedAs(saved.name));
     } catch (err) {
@@ -2222,15 +2233,22 @@ class HomeBasketCard extends HTMLElement {
         continue;
       }
 
-      const label = item.added ? t.added : item.already_on_list ? t.onList : t.recognised;
-      const tag = el('span', { class: item.added ? 'tag' : 'tag muted' });
-      if (item.added) tag.appendChild(icon('check'));
+      const label = item.increased
+        ? t.counted
+        : item.added
+          ? t.added
+          : item.already_on_list
+            ? t.onList
+            : t.recognised;
+      const done = item.added || item.increased;
+      const tag = el('span', { class: done ? 'tag' : 'tag muted' });
+      if (done) tag.appendChild(icon('check'));
       tag.appendChild(el('span', { text: label }));
 
       strip.appendChild(
         el(
           'div',
-          { class: item.added ? 'scan-card done' : 'scan-card' },
+          { class: done ? 'scan-card done' : 'scan-card' },
           dismiss(item),
           tag,
           el('div', { class: 'name', text: item.name || item.code }),
