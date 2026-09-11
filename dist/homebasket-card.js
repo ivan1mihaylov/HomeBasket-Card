@@ -1386,7 +1386,13 @@ class HomeBasketCard extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this._config = { ...DEFAULT_CONFIG };
-    this._state = { mappings: [], pending: [], last_scan: null, todo_entity: null };
+    this._state = {
+      mappings: [],
+      pending: [],
+      recent: [],
+      last_scan: null,
+      todo_entity: null,
+    };
     this._recent = [];
     this._photos = new Map();
     this._loadingPhotos = new Set();
@@ -1858,12 +1864,14 @@ class HomeBasketCard extends HTMLElement {
    */
   async _dismissScan(item) {
     this._recent = this._recent.filter((entry) => entry.code !== item.code);
-    if (!item.needsName) {
-      this._render();
-      return;
-    }
     try {
-      await this._call('homebasket/pending/dismiss', { code: item.code });
+      // A code waiting for a name lives in the integration's pending list; a
+      // recognised scan lives in its recent list. Either way it is not this
+      // card's alone to forget.
+      await this._call(
+        item.needsName ? 'homebasket/pending/dismiss' : 'homebasket/recent/dismiss',
+        { code: item.code },
+      );
     } catch (err) {
       toast(this.shadowRoot, err.message || this._t.scanFailed, true);
     }
@@ -2300,8 +2308,17 @@ class HomeBasketCard extends HTMLElement {
   /** Codes worth showing in the strip: unnamed ones first, then this session's scans. */
   _recentItems() {
     const pending = this._state.pending.map((item) => ({ ...item, needsName: true }));
-    const pendingCodes = new Set(pending.map((item) => item.code));
-    const scans = this._recent.filter((item) => !pendingCodes.has(item.code));
+    const seen = new Set(pending.map((item) => item.code));
+
+    // The integration keeps the recent scans, so one made anywhere - this
+    // card, a hardware scanner, a shopping list - shows here. What this card
+    // just scanned is put in front of them, to save waiting for the refresh.
+    const scans = [];
+    for (const item of [...this._recent, ...(this._state.recent || [])]) {
+      if (seen.has(item.code)) continue;
+      seen.add(item.code);
+      scans.push(item);
+    }
     return [...pending, ...scans];
   }
 

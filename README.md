@@ -15,6 +15,18 @@ a rename inside the Home Assistant frontend cannot leave you with an invisible
 input field or a missing button. It ships as a single file, so there are no
 sub-modules that can get stuck in a browser cache.
 
+## The three parts
+
+| | What it is |
+| --- | --- |
+| **[HomeBasket](https://github.com/ivan1mihaylov/HomeBasket)** | Scanning, and the products it learns: names, barcodes, pictures, everything the databases know. |
+| **HomeBasket Card** | This: scanning with a phone, for when there is no scanner on a shelf — and the place to look after the products themselves. |
+| **[HomeBasket Lists](https://github.com/ivan1mihaylov/HomeBasket-Lists)** | Shopping lists and tasks, using what HomeBasket knows. |
+
+The recent scans shown here come from the integration, so a scan made anywhere —
+this card, a hardware scanner, the scan button on a list — shows up in the strip
+either way.
+
 ## Languages
 
 **Bulgarian and English.** The card follows the language of the person using
