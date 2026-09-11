@@ -1,3 +1,5 @@
+<img src="docs/icon.png" alt="HomeBasket Card" width="96" align="right">
+
 # HomeBasket Card
 
 The dashboard card for the [HomeBasket](https://github.com/ivan1mihaylov/HomeBasket)
