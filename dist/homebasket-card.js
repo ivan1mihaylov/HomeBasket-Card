@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.9.2';
+const VERSION = '0.9.3';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -1543,7 +1543,10 @@ class HomeBasketCard extends HTMLElement {
       toast(this.shadowRoot, err.message || t.scanFailed, true);
     } finally {
       this._busy = false;
+      // What was typed filtered the product list as it was typed, so emptying
+      // the field has to lift that too, or the shelf stays showing one thing.
       this._input.value = '';
+      this._filter = '';
       await this._refresh();
     }
   }

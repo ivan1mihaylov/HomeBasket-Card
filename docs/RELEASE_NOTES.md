@@ -1,5 +1,6 @@
-The basket button now sends the barcode along with the name, so a product put
-on a shopping list from the card lands as what it is — a grocery, or a thing —
-rather than as a line with no kind.
+Entering a barcode by hand no longer leaves the shelf filtered.
 
-Needs HomeBasket 0.9.2.
+What you type filters the known products as you type it, so a barcode narrowed
+the list to that one product. Scanning emptied the field but not the filter,
+and the shelf kept showing one thing until it was cleared by hand. The field
+and the filter are now emptied together.
