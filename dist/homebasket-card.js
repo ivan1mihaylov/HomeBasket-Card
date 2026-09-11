@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.9.1';
+const VERSION = '0.9.2';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -1956,7 +1956,12 @@ class HomeBasketCard extends HTMLElement {
   async _addToList(item) {
     const t = this._t;
     try {
-      const result = await this._call('homebasket/list/add', { name: item.name });
+      // The barcode goes with it, so the list knows which product this is
+      // and what the database that knew it says it is.
+      const result = await this._call('homebasket/list/add', {
+        name: item.name,
+        ...(item.code ? { code: item.code } : {}),
+      });
       toast(
         this.shadowRoot,
         result.already_on_list ? t.alreadyOnList(item.name) : t.addedToList(item.name),

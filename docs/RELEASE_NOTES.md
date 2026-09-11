@@ -1,6 +1,5 @@
-Recent scans are listed newest first.
+The basket button now sends the barcode along with the name, so a product put
+on a shopping list from the card lands as what it is — a grocery, or a thing —
+rather than as a line with no kind.
 
-The strip used to put the codes waiting for a name ahead of the recognised
-scans, each group in its own order, so the thing just scanned could turn up
-anywhere in it. They are one list sorted by when they were scanned now,
-whichever kind they are.
+Needs HomeBasket 0.9.2.
