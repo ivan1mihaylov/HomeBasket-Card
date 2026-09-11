@@ -83,6 +83,15 @@ title: Shopping
 
 All options are also editable in the visual card editor.
 
+## The field at the top
+
+One field does both jobs. Type a barcode and press Enter (or the **+**) to scan
+it by hand; type anything else and the list of known products narrows as you
+type, so it doubles as the search. Scanning empties the field and lifts the
+filter with it.
+
+The square tile to its left and the camera button both open the camera.
+
 ## Products without a barcode
 
 A product HomeBasket has no barcode for — one a shopping list configured, or
@@ -96,9 +105,14 @@ Any barcode attached this way can be detached again in the same list.
 ## Which shop a product is bought in
 
 A product's sheet has a **Shop category** — groceries, bakery, greengrocer,
-butcher, cosmetics, pharmacy, pet shop or building supplies. A scan sets it from the database that
-knew the barcode, and it can be changed here. HomeBasket Lists uses it to
-decide which zones are worth reminding you about that product in.
+butcher, cosmetics, pharmacy, pet shop or building supplies. A scan sets it
+from the database that knew the barcode: Open Food Facts and Open Products
+Facts mean groceries, Open Beauty Facts the chemist's, Open Pet Food Facts the
+pet shop. The other five are for what you put there yourself, and a product
+moved by hand stays where it was put.
+
+HomeBasket Lists uses it to decide which zones are worth reminding you about
+that product in — the butcher's is not where you want to hear about shampoo.
 
 ## Product photos
 
