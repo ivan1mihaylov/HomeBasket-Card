@@ -83,6 +83,16 @@ title: Shopping
 
 All options are also editable in the visual card editor.
 
+## Products without a barcode
+
+A product HomeBasket has no barcode for — one a shopping list configured, or
+anything else that was never scanned — shows as **No barcode**. Its sheet has a
+field to type one in: from then on the barcode belongs to that product, and
+scanning it finds the name, picture and shop already set rather than creating a
+second one.
+
+Any barcode attached this way can be detached again in the same list.
+
 ## Which shop a product is bought in
 
 A product's sheet has a **Shop category** — groceries, bakery, greengrocer,

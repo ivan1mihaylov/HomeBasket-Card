@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.10.1';
+const VERSION = '0.11.0';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -44,6 +44,12 @@ const TRANSLATIONS = {
     newProduct: 'New product',
     editProduct: 'Edit product',
     barcodeIs: (code) => `Barcode ${code}`,
+    noBarcode: 'No barcode',
+    noBarcodeYet: 'No barcode yet',
+    barcodePlaceholder: 'Barcode',
+    addBarcode: 'Add this barcode',
+    addBarcodeHint: 'Type a barcode to attach it to this product, and scanning it will find this one.',
+    barcodeAdded: (code) => `${code} now belongs to this product`,
     unknownBarcode: (code) => `Barcode ${code} is not known yet.`,
     productName: 'Product name',
     category: 'Category',
@@ -186,6 +192,12 @@ const TRANSLATIONS = {
     newProduct: 'Нов продукт',
     editProduct: 'Редакция на продукт',
     barcodeIs: (code) => `Баркод ${code}`,
+    noBarcode: 'Без баркод',
+    noBarcodeYet: 'Още няма баркод',
+    barcodePlaceholder: 'Баркод',
+    addBarcode: 'Добави този баркод',
+    addBarcodeHint: 'Въведи баркод, за да го закачиш за този продукт — след това сканирането ще намира него.',
+    barcodeAdded: (code) => `${code} вече е на този продукт`,
     unknownBarcode: (code) => `Баркод ${code} още не е познат.`,
     productName: 'Име на продукта',
     category: 'Категория',
@@ -642,7 +654,16 @@ const STYLES = `
     padding: 11px 13px;
     margin-bottom: 14px;
   }
-  .dialog .content select { appearance: none; }
+  .dialog .content select {
+    appearance: none;
+    /* The list it drops down is the browser's, and follows the colour scheme
+       rather than the theme; this is what keeps it dark on a dark board. */
+    color-scheme: var(--hb-scheme, light);
+  }
+  .dialog .content select option {
+    background: var(--hb-surface);
+    color: var(--hb-fg);
+  }
   .dialog .content select + .hint { margin-top: -8px; }
   .dialog .actions { display: flex; justify-content: flex-end; gap: 8px; padding: 6px 18px 18px; }
   .dialog .hint { font-size: 0.8125rem; color: var(--hb-muted); margin: 0 0 12px; }
@@ -664,6 +685,9 @@ const STYLES = `
   .code-list button { color: var(--hb-muted); padding: 4px; }
   .code-list button:hover { color: var(--hb-danger); }
   .code-list button svg { width: 15px; height: 15px; }
+  .code-list .empty { color: var(--hb-muted); font-family: inherit; }
+  .add-code { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .add-code input { flex: 1 1 auto; min-width: 0; margin-bottom: 0 !important; }
 
   .similar { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--hb-line); }
   .similar > p { font-size: 0.8125rem; color: var(--hb-muted); margin: 0 0 10px; }
@@ -1223,6 +1247,12 @@ function readPhoto(file, maxSize = 320) {
 
 const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'itf', 'qr_code'];
 
+// A product a shopping list configured has no barcode; HomeBasket keys it by
+// something of its own instead, which is never shown as one.
+const LOCAL_PREFIX = 'local:';
+const isLocal = (code) => String(code || '').startsWith(LOCAL_PREFIX);
+const barcodesOf = (item) => (item?.codes || []).filter((code) => !isLocal(code));
+
 // The kinds of shop a product can belong to. The integration says which it
 // knows; this is only what to show when it is too old to say.
 const DEPARTMENTS = ['groceries', 'bakery', 'produce', 'butcher', 'cosmetics', 'pets', 'building'];
@@ -1645,7 +1675,11 @@ class HomeBasketCard extends HTMLElement {
           content.appendChild(
             el('p', {
               class: 'hint',
-              text: isNew ? t.unknownBarcode(code) : t.barcodeIs(code),
+              text: isNew
+                ? t.unknownBarcode(code)
+                : barcodesOf(existing).length
+                  ? t.barcodeIs(barcodesOf(existing)[0])
+                  : t.noBarcodeYet,
             }),
           );
 
@@ -1782,32 +1816,83 @@ class HomeBasketCard extends HTMLElement {
             el('div', { class: 'photo-top' }, el('label', { text: t.photo }), box, file),
           );
 
-          // Every barcode of this product, each detachable but the first.
-          if (existing?.codes?.length > 1) {
+          // Every barcode of this product, and a field to add one by hand.
+          // A product a shopping list configured arrives with none at all;
+          // giving it one here is what makes it turn up when it is scanned.
+          if (existing) {
             const list = el('ul');
-            for (const [index, entry] of existing.codes.entries()) {
-              list.appendChild(
-                el(
-                  'li',
-                  {},
-                  el('span', { text: entry }),
-                  index === 0
-                    ? el('span', { class: 'first', text: t.barcodes })
-                    : el(
-                        'button',
-                        {
-                          title: t.unlink,
-                          'aria-label': t.unlink,
-                          on: { click: () => this._unlinkCode(entry, close) },
-                        },
-                        icon('close'),
-                      ),
-                ),
-              );
-            }
+            const barcodeInput = el('input', {
+              type: 'text',
+              inputmode: 'numeric',
+              placeholder: t.barcodePlaceholder,
+            });
+
+            const drawCodes = () => {
+              list.replaceChildren();
+              const codes = barcodesOf(existing);
+              if (!codes.length) {
+                list.appendChild(
+                  el('li', { class: 'empty' }, el('span', { text: t.noBarcodeYet })),
+                );
+              }
+              for (const entry of codes) {
+                list.appendChild(
+                  el(
+                    'li',
+                    {},
+                    el('span', { text: entry }),
+                    // The key a product is stored under cannot be detached;
+                    // any barcode attached to it can.
+                    entry === existing.code
+                      ? el('span', { class: 'first', text: t.barcodes })
+                      : el(
+                          'button',
+                          {
+                            title: t.unlink,
+                            'aria-label': t.unlink,
+                            on: { click: () => this._unlinkCode(entry, close) },
+                          },
+                          icon('close'),
+                        ),
+                  ),
+                );
+              }
+            };
+
+            const attach = async () => {
+              const wanted = barcodeInput.value.trim();
+              if (!wanted) return;
+              try {
+                await this._call('homebasket/alias/add', {
+                  code: wanted,
+                  product: existing.code,
+                });
+                existing.codes = [...(existing.codes || []), wanted];
+                barcodeInput.value = '';
+                drawCodes();
+                toast(this.shadowRoot, t.barcodeAdded(wanted));
+              } catch (err) {
+                toast(this.shadowRoot, err.message || t.scanFailed, true);
+              }
+            };
+
+            barcodeInput.addEventListener('keydown', (event) => {
+              if (event.key !== 'Enter') return;
+              event.preventDefault();
+              attach();
+            });
+
+            drawCodes();
             content.append(
               el('label', { text: t.barcodes }),
               el('div', { class: 'code-list' }, list),
+              el(
+                'div',
+                { class: 'add-code' },
+                barcodeInput,
+                iconButton('plus', t.addBarcode, attach),
+              ),
+              el('p', { class: 'hint', text: t.addBarcodeHint }),
             );
           }
 
@@ -2140,7 +2225,7 @@ class HomeBasketCard extends HTMLElement {
 
   _renderDetails(details, item, t) {
     const rows = [
-      [t.barcodes, item.codes?.length > 1 ? item.codes.join(', ') : null],
+      [t.barcodes, barcodesOf(item).join(', ') || null],
       [t.fieldBrand, details.brands?.join(', ') || details.brand],
       [t.fieldQuantity, details.quantity],
       [t.fieldServing, details.serving_size],
@@ -2280,8 +2365,26 @@ class HomeBasketCard extends HTMLElement {
     this._render();
   }
 
+  /**
+   * Tell the browser which colour scheme the dashboard is in.
+   *
+   * The list a `<select>` drops down, and the panel a date field opens, are
+   * drawn by the browser rather than by this card, and they follow the colour
+   * scheme rather than the Home Assistant theme - which is how a dark
+   * dashboard ends up with a white menu on it. The theme does not say which
+   * it is, so the text colour answers for it: light text means a dark
+   * dashboard.
+   */
+  _syncColorScheme() {
+    const text = getComputedStyle(this).color;
+    const [r = 0, g = 0, b = 0] = (text.match(/[\d.]+/g) || []).map(Number);
+    const lightText = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.5;
+    this.style.setProperty('--hb-scheme', lightText ? 'dark' : 'light');
+  }
+
   _render() {
     if (!this._rendered) return;
+    this._syncColorScheme();
     const t = this._t;
 
     this._title.textContent = this._config.title || t.title;
@@ -2586,10 +2689,11 @@ class HomeBasketCard extends HTMLElement {
         el('div', { class: 'name', text: item.name || item.code }),
         el('div', {
           class: 'code',
-          text:
-            item.codes?.length > 1
-              ? `${item.code} · +${item.codes.length - 1}`
-              : item.code,
+          text: (() => {
+            const codes = barcodesOf(item);
+            if (!codes.length) return t.noBarcode;
+            return codes.length > 1 ? `${codes[0]} · +${codes.length - 1}` : codes[0];
+          })(),
         }),
       ),
       side,
