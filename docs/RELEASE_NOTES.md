@@ -1,8 +1,3 @@
-**Shop category in the product sheet.** Groceries, greengrocer, butcher,
-cosmetics, pet shop or building supplies — a scan sets it from the database
-that knew the barcode, and here is where it is changed.
+The shop category now offers **the bakery** as well.
 
-It is what a shopping list uses to decide which zones are worth reminding you
-about that product in.
-
-Needs HomeBasket 0.10.0.
+Needs HomeBasket 0.10.1.

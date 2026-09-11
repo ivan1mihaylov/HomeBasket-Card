@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.10.0';
+const VERSION = '0.10.1';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -51,6 +51,7 @@ const TRANSLATIONS = {
     departmentHint: 'Which kind of shop this is bought in. Used to decide where you are reminded about it.',
     departments: {
       groceries: 'Groceries',
+      bakery: 'Bakery',
       produce: 'Greengrocer',
       butcher: 'Butcher',
       cosmetics: 'Cosmetics',
@@ -192,6 +193,7 @@ const TRANSLATIONS = {
     departmentHint: 'В какъв магазин се купува. По това се решава къде да ти се напомня за него.',
     departments: {
       groceries: 'Хранителни стоки',
+      bakery: 'Закуски',
       produce: 'Плод и зеленчук',
       butcher: 'Месарница',
       cosmetics: 'Парфюмерия и козметика',
@@ -1223,7 +1225,7 @@ const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'it
 
 // The kinds of shop a product can belong to. The integration says which it
 // knows; this is only what to show when it is too old to say.
-const DEPARTMENTS = ['groceries', 'produce', 'butcher', 'cosmetics', 'pets', 'building'];
+const DEPARTMENTS = ['groceries', 'bakery', 'produce', 'butcher', 'cosmetics', 'pets', 'building'];
 const DEFAULT_DEPARTMENT = 'groceries';
 
 // Where the integration publishes the reader it ships.
