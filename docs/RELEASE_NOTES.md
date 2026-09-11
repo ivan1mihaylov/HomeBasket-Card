@@ -1,6 +1,6 @@
-Recent scans now come from the integration, so a scan made anywhere shows here:
-this card, a hardware scanner, or the scan button on a HomeBasket Lists list.
-What this card just scanned still appears instantly, in front of the rest, and
-dismissing a scan goes to the integration rather than to this card's own copy.
+Recent scans are listed newest first.
 
-Needs HomeBasket 0.9.0.
+The strip used to put the codes waiting for a name ahead of the recognised
+scans, each group in its own order, so the thing just scanned could turn up
+anywhere in it. They are one list sorted by when they were scanned now,
+whichever kind they are.
