@@ -128,6 +128,7 @@ const TRANSLATIONS = {
       'Camera access was denied. Allow it for Home Assistant and try again.',
     cameraFailed: (message) => `Could not start the camera: ${message}`,
     cameraRetry: 'Open the camera',
+    cameraNeedsTap: 'Tap below to start the camera.',
     cameraInsecure:
       'The camera needs a secure connection. Open Home Assistant over HTTPS.',
     cameraUnsupported: 'This browser does not give web pages access to the camera.',
@@ -246,6 +247,7 @@ const TRANSLATIONS = {
       'Достъпът до камерата е отказан. Разреши го за Home Assistant и опитай пак.',
     cameraFailed: (message) => `Камерата не тръгна: ${message}`,
     cameraRetry: 'Отвори камерата',
+    cameraNeedsTap: 'Натисни отдолу, за да пуснеш камерата.',
     cameraInsecure:
       'Камерата изисква защитена връзка. Отвори Home Assistant през HTTPS.',
     cameraUnsupported: 'Този браузър не дава достъп до камерата на уеб страници.',
@@ -773,8 +775,33 @@ const STYLES = `
   .details .source a { color: var(--hb-accent); }
 
   /* Camera ------------------------------------------------------------ */
-  .camera { position: relative; background: #000; border-radius: 12px; overflow: hidden; }
-  .camera video { display: block; width: 100%; max-height: 60vh; object-fit: cover; }
+  /* The box is its full size before the stream arrives, so the sheet does
+     not jump when it does. */
+  .camera {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    max-height: 58vh;
+    margin-inline: auto;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .camera video {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .camera.live video { opacity: 1; }
+  /* The frame only means something once there is a picture in it. */
+  .camera .reticle { opacity: 0; transition: opacity 0.15s ease; }
+  .camera.live .reticle { opacity: 1; }
+  .camera:not(.live) { cursor: pointer; }
+  .camera + .hint { margin-top: 10px; }
   .camera .reticle {
     position: absolute;
     inset: 22% 10%;
@@ -1188,10 +1215,12 @@ function scanWithCamera(root, config, t) {
     let timer = null;
     let settled = false;
 
+    let frame = null;
     const stop = () => {
       clearInterval(timer);
       stream?.getTracks().forEach((track) => track.stop());
       stream = null;
+      frame?.classList.remove('live');
     };
     const finish = (code, close) => {
       if (settled) return;
@@ -1210,12 +1239,17 @@ function scanWithCamera(root, config, t) {
         // itself, and some browsers only hand over the camera after one, so
         // a failed start offers the tap rather than being a dead end.
         const retry = el('button', { class: 'btn block', text: t.cameraRetry, hidden: true });
+        // A video element with nothing in it paints its own ground - white
+        // here, a grey play button there - so it stays invisible until there
+        // is a picture, and the black box shows in its place.
+        frame = el('div', { class: 'camera' }, video, el('div', { class: 'reticle' }));
         content.append(
-          el('div', { class: 'camera' }, video, el('div', { class: 'reticle' })),
+          frame,
           status,
           retry,
         );
 
+        let tapped = false;
         const start = async () => {
           stop();
           retry.hidden = true;
@@ -1227,6 +1261,7 @@ function scanWithCamera(root, config, t) {
             });
             video.srcObject = stream;
             await video.play();
+            frame.classList.add('live');
 
             const detect = await createDetector(config);
             status.textContent = t.cameraAim;
@@ -1248,13 +1283,26 @@ function scanWithCamera(root, config, t) {
               }
             }, 300);
           } catch (err) {
-            status.textContent =
-              err.name === 'NotAllowedError' ? t.cameraDenied : t.cameraFailed(err.message);
+            // Opened from a home screen shortcut, nothing on the page has been
+            // tapped yet, and a browser will not hand over the camera before
+            // that. That is not a refusal - it just needs the tap.
+            if (err.name === 'NotAllowedError') {
+              status.textContent = tapped ? t.cameraDenied : t.cameraNeedsTap;
+            } else {
+              status.textContent = t.cameraFailed(err.message);
+            }
             retry.hidden = false;
           }
         };
 
-        retry.addEventListener('click', start);
+        const startByHand = () => {
+          tapped = true;
+          start();
+        };
+        retry.addEventListener('click', startByHand);
+        frame.addEventListener('click', () => {
+          if (!frame.classList.contains('live')) startByHand();
+        });
         start();
 
         return stop; // Runs when the dialog is dismissed.
@@ -1317,6 +1365,7 @@ class HomeBasketCard extends HTMLElement {
     this._filter = '';
     this._searchOpen = false;
     this._busy = false;
+    this._cameraOpen = false;
     this._unsubscribe = null;
     this._rendered = false;
   }
@@ -1900,12 +1949,24 @@ class HomeBasketCard extends HTMLElement {
 
   async _openCamera() {
     const t = this._t;
+    // One camera at a time: a card that opens it by itself and a tap on the
+    // scan button would otherwise leave two sheets stacked, the one
+    // underneath looking like a scan that never finished.
+    if (this._cameraOpen) return;
+
     const reason = scannerUnavailableReason(this._config, t);
     if (reason) {
       toast(this.shadowRoot, reason, true);
       return;
     }
-    const code = await scanWithCamera(this.shadowRoot, this._config, t);
+
+    this._cameraOpen = true;
+    let code = null;
+    try {
+      code = await scanWithCamera(this.shadowRoot, this._config, t);
+    } finally {
+      this._cameraOpen = false;
+    }
     if (code) await this._submit(code);
   }
 

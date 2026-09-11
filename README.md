@@ -159,8 +159,11 @@ One tap from the home screen to the camera, without going through the app:
 A dashboard you use for other things works too: put `?homebasket=scan` on the
 end of the shortcut's path and the card opens the camera once, on arrival.
 
-If the browser refuses the camera because nothing on the page was tapped, the
-dialog says so and offers a button to open it — one tap instead of none.
+Android's web view hands the camera over only after something on the page has
+been tapped, and arriving from a shortcut there has been no tap yet. The sheet
+opens ready for it: tap the black square (or the button under it) and the
+camera starts. That is one tap instead of none, and the sheet says so plainly
+rather than reporting a refusal that was never one.
 
 ## Camera support
 
