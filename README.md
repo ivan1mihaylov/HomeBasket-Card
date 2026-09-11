@@ -153,19 +153,50 @@ with a leading zero) is one product, whichever reading your scanner reports.
 
 ## A shortcut on the phone's home screen
 
-One tap from the home screen to the camera, without going through the app:
+One tap from the home screen to the camera, without going through the app.
 
-1. Make a dashboard view holding only this card, with `scan_on_open: true`.
-   Opening the view is then the same as opening the camera.
-2. Point a home screen shortcut at that view:
-   - **Android** — Companion app → Settings → Companion app → Manage shortcuts
-     → add one with the view's path (`/lovelace/scan`), then long-press the
-     Home Assistant icon on the home screen and drag the shortcut out.
-   - **iOS** — Shortcuts app → new shortcut → *Open URL* with
-     `homeassistant://navigate/lovelace/scan` → share it to the home screen.
+**1. Give the scanner a view of its own.** Make a dashboard view holding only
+this card, with `scan_on_open: true` (in the visual editor: *Open the camera as
+soon as this card is shown*). Opening that view is then the same as opening the
+camera. Give the view a **URL** in its settings — say `scan` — otherwise its
+path is its number and a shortcut to it breaks the moment you reorder the views.
 
-A dashboard you use for other things works too: put `?homebasket=scan` on the
-end of the shortcut's path and the card opens the camera once, on arrival.
+**2. Note the path.** Open the view and look at the address after your
+Home Assistant host. A view on the default dashboard is `lovelace/scan`; a view
+on a dashboard of its own is `<dashboard>/scan`, and a dashboard on its own is
+just `<dashboard>`. That whole string, without a leading slash, is the path.
+
+**3. Point a shortcut at it.**
+
+- **Android** — Companion app → **Settings → Companion app → Manage shortcuts**.
+  Fill in:
+
+  | Field | What goes in it |
+  | --- | --- |
+  | *Shortcut label* | The name under the icon, e.g. `Scan` |
+  | *Shortcut description* | Anything, e.g. `Open the camera` |
+  | *Shortcut type* | **Dashboard** |
+  | *Dashboard view or dashboard* | **The path from step 2**, e.g. `lovelace/scan` |
+
+  Press **Update shortcut data**, then long-press the Home Assistant icon on
+  the home screen and drag the shortcut out. The two fields are easy to swap:
+  the path belongs in the **last** one — a label there leaves the path at `0`,
+  and the app then opens a dashboard that does not exist and says it cannot
+  connect.
+
+- **iOS** — Shortcuts app → new shortcut → *Open URL* with
+  `homeassistant://navigate/lovelace/scan` → share it to the home screen.
+
+- **Any phone, through the browser** — open the view in Chrome or Safari and use
+  *Add to Home screen*. It opens in the browser rather than the app, and asks
+  for the camera once.
+
+A dashboard you use for other things works too, where the shortcut carries a
+whole address rather than a path — the browser and the iOS *Open URL* route:
+put `?homebasket=scan` on the end and the card opens the camera once, on
+arrival, then wipes it from the address so walking around the dashboard does not
+reopen it. Android's shortcut field takes a path, not an address, so there use
+`scan_on_open` and a view of its own.
 
 Android's web view hands the camera over only after something on the page has
 been tapped, and arriving from a shortcut there has been no tap yet. The sheet
