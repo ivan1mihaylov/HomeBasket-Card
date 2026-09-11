@@ -83,6 +83,13 @@ title: Shopping
 
 All options are also editable in the visual card editor.
 
+## Which shop a product is bought in
+
+A product's sheet has a **Shop category** — groceries, greengrocer, butcher,
+cosmetics, pet shop or building supplies. A scan sets it from the database that
+knew the barcode, and it can be changed here. HomeBasket Lists uses it to
+decide which zones are worth reminding you about that product in.
+
 ## Product photos
 
 Products are shown with a picture wherever one is available:

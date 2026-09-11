@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.9.4';
+const VERSION = '0.10.0';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -47,6 +47,16 @@ const TRANSLATIONS = {
     unknownBarcode: (code) => `Barcode ${code} is not known yet.`,
     productName: 'Product name',
     category: 'Category',
+    department: 'Shop category',
+    departmentHint: 'Which kind of shop this is bought in. Used to decide where you are reminded about it.',
+    departments: {
+      groceries: 'Groceries',
+      produce: 'Greengrocer',
+      butcher: 'Butcher',
+      cosmetics: 'Cosmetics',
+      pets: 'Pet shop',
+      building: 'Building supplies',
+    },
     categoryHint: 'Optional, shown as a label in the list.',
     photo: 'Photo',
     takePhoto: 'Take or upload a photo',
@@ -178,6 +188,16 @@ const TRANSLATIONS = {
     unknownBarcode: (code) => `Баркод ${code} още не е познат.`,
     productName: 'Име на продукта',
     category: 'Категория',
+    department: 'Категория магазин',
+    departmentHint: 'В какъв магазин се купува. По това се решава къде да ти се напомня за него.',
+    departments: {
+      groceries: 'Хранителни стоки',
+      produce: 'Плод и зеленчук',
+      butcher: 'Месарница',
+      cosmetics: 'Парфюмерия и козметика',
+      pets: 'Домашни любимци',
+      building: 'Строителни материали',
+    },
     categoryHint: 'По избор, показва се като етикет в списъка.',
     photo: 'Снимка',
     takePhoto: 'Снимай или качи снимка',
@@ -607,7 +627,8 @@ const STYLES = `
   .dialog h3 { margin: 0; padding: 18px 18px 8px; font-size: 1.1rem; font-weight: 600; }
   .dialog .content { padding: 8px 18px 16px; overflow: auto; }
   .dialog .content label { display: block; margin-bottom: 6px; font-size: 0.8125rem; color: var(--hb-muted); }
-  .dialog .content input[type='text'] {
+  .dialog .content input[type='text'],
+  .dialog .content select {
     width: 100%;
     box-sizing: border-box;
     font: inherit;
@@ -619,6 +640,8 @@ const STYLES = `
     padding: 11px 13px;
     margin-bottom: 14px;
   }
+  .dialog .content select { appearance: none; }
+  .dialog .content select + .hint { margin-top: -8px; }
   .dialog .actions { display: flex; justify-content: flex-end; gap: 8px; padding: 6px 18px 18px; }
   .dialog .hint { font-size: 0.8125rem; color: var(--hb-muted); margin: 0 0 12px; }
 
@@ -1198,6 +1221,11 @@ function readPhoto(file, maxSize = 320) {
 
 const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'itf', 'qr_code'];
 
+// The kinds of shop a product can belong to. The integration says which it
+// knows; this is only what to show when it is too old to say.
+const DEPARTMENTS = ['groceries', 'produce', 'butcher', 'cosmetics', 'pets', 'building'];
+const DEFAULT_DEPARTMENT = 'groceries';
+
 // Where the integration publishes the reader it ships.
 const ZXING_URL = '/homebasket/zxing.min.js';
 
@@ -1599,6 +1627,7 @@ class HomeBasketCard extends HTMLElement {
     const saved = await new Promise((resolve) => {
       let nameInput;
       let categoryInput;
+      let departmentInput;
       let reanalyse = () => {};
       let settled = false;
       const finish = (value, close) => {
@@ -1628,6 +1657,19 @@ class HomeBasketCard extends HTMLElement {
           content.appendChild(el('label', { text: t.category }));
           categoryInput = el('input', { type: 'text', value: existing?.category || '' });
           content.appendChild(categoryInput);
+
+          // Which kind of shop it is bought in. A scan starts it off from the
+          // database that knew the barcode; here it can be moved.
+          content.appendChild(el('label', { text: t.department }));
+          departmentInput = el('select');
+          for (const key of this._state.departments || DEPARTMENTS) {
+            departmentInput.appendChild(
+              el('option', { value: key, text: t.departments[key] || key }),
+            );
+          }
+          departmentInput.value = existing?.department || DEFAULT_DEPARTMENT;
+          content.appendChild(departmentInput);
+          content.appendChild(el('p', { class: 'hint', text: t.departmentHint }));
 
           // One file input covers both the camera and the gallery: `capture`
           // asks for the camera where there is one.
@@ -1842,6 +1884,7 @@ class HomeBasketCard extends HTMLElement {
                 {
                   name: nameInput.value.trim(),
                   category: categoryInput.value.trim() || null,
+                  department: departmentInput.value || null,
                   photoData,
                   photoUrl,
                   photoTouched,
@@ -1860,6 +1903,7 @@ class HomeBasketCard extends HTMLElement {
         code,
         name: saved.name,
         category: saved.category,
+        department: saved.department,
         // `image` is only sent when the photo changed, so an untouched
         // sheet never clears the picture Open Food Facts supplied.
         ...(saved.photoTouched ? { image: saved.photoUrl } : {}),

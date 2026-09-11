@@ -1,11 +1,8 @@
-**The camera works on an iPhone now.**
+**Shop category in the product sheet.** Groceries, greengrocer, butcher,
+cosmetics, pet shop or building supplies — a scan sets it from the database
+that knew the barcode, and here is where it is changed.
 
-Safari reads no barcodes of its own. The card falls back to the reader
-HomeBasket serves from your own installation, so scanning works there with
-nothing to configure — and, as before, nothing is fetched from a third party.
+It is what a shopping list uses to decide which zones are worth reminding you
+about that product in.
 
-Two bugs came out of testing that fallback: the card called a method the
-library does not have, and unwrapped its export wrongly, so a ZXing build set
-through `zxing_url` would not have worked either. Both are fixed.
-
-Needs HomeBasket 0.9.3 for the reader.
+Needs HomeBasket 0.10.0.
