@@ -158,13 +158,13 @@ One tap from the home screen to the camera, without going through the app.
 **1. Give the scanner a view of its own.** Make a dashboard view holding only
 this card, with `scan_on_open: true` (in the visual editor: *Open the camera as
 soon as this card is shown*). Opening that view is then the same as opening the
-camera. Give the view a **URL** in its settings — say `scan` — otherwise its
-path is its number and a shortcut to it breaks the moment you reorder the views.
+camera. Set the view's **URL** in its settings — say `scan` — so it has a path
+of its own.
 
-**2. Note the path.** Open the view and look at the address after your
-Home Assistant host. A view on the default dashboard is `lovelace/scan`; a view
-on a dashboard of its own is `<dashboard>/scan`, and a dashboard on its own is
-just `<dashboard>`. That whole string, without a leading slash, is the path.
+**2. Note the path.** It is what follows your Home Assistant host in the
+address: `lovelace/scan` for a view on the default dashboard,
+`<dashboard>/scan` for one on a dashboard of its own, or just `<dashboard>` for
+a whole dashboard. The path goes in without a leading slash.
 
 **3. Point a shortcut at it.**
 
@@ -179,10 +179,7 @@ just `<dashboard>`. That whole string, without a leading slash, is the path.
   | *Dashboard view or dashboard* | **The path from step 2**, e.g. `lovelace/scan` |
 
   Press **Update shortcut data**, then long-press the Home Assistant icon on
-  the home screen and drag the shortcut out. The two fields are easy to swap:
-  the path belongs in the **last** one — a label there leaves the path at `0`,
-  and the app then opens a dashboard that does not exist and says it cannot
-  connect.
+  the home screen and drag the shortcut out.
 
 - **iOS** — Shortcuts app → new shortcut → *Open URL* with
   `homeassistant://navigate/lovelace/scan` → share it to the home screen.
@@ -200,9 +197,8 @@ reopen it. Android's shortcut field takes a path, not an address, so there use
 
 Android's web view hands the camera over only after something on the page has
 been tapped, and arriving from a shortcut there has been no tap yet. The sheet
-opens ready for it: tap the black square (or the button under it) and the
-camera starts. That is one tap instead of none, and the sheet says so plainly
-rather than reporting a refusal that was never one.
+opens ready for it: tap the black square, or the button under it, and the
+camera starts.
 
 ## Camera support
 
