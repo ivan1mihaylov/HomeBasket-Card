@@ -1285,7 +1285,7 @@ const DEFAULT_CONFIG = {
   title: null,
   language: null,
   add_on_scan: true,
-  open_known: false,
+  open_known: true,
   scan_on_open: false,
   show_recent: true,
   show_products: true,
@@ -1783,9 +1783,9 @@ class HomeBasketCard extends HTMLElement {
   }
 
   /**
-   * A barcode the shelf already knows is simply scanned: it lands in the
-   * recent strip and on the shopping list, and nothing interrupts the next
-   * scan. Turn `open_known` on to have the product open for editing instead.
+   * A barcode the shelf already knows opens the product itself, rather than
+   * only saying its name and leaving you to find it in the list below. The
+   * scan is already in the strip and on the shopping list by now.
    */
   async _openKnown(result) {
     if (!this._config.open_known) return;
@@ -2385,7 +2385,6 @@ const EDITOR_FIELDS = [
     key: 'open_known',
     label: 'Open the product when a barcode is already known',
     type: 'boolean',
-    hint: 'Off by default: a known barcode is scanned onto the list without interrupting.',
   },
   {
     key: 'scan_on_open',

@@ -55,7 +55,7 @@ title: Shopping
 | `title` | translated | Card heading. |
 | `language` | Home Assistant's | `bg` or `en`. Leave empty to follow the Home Assistant language. |
 | `add_on_scan` | `true` | Put recognised products on the shopping list immediately. Turn off to only build the product dictionary. |
-| `open_known` | `false` | Turn on to open the product when a barcode HomeBasket already knows is scanned, so it can be corrected on the spot. Off, a known barcode is scanned onto the list without interrupting. |
+| `open_known` | `true` | Scanning a barcode HomeBasket already knows opens that product, so it can be checked or corrected on the spot. |
 | `scan_on_open` | `false` | Open the camera as soon as the card is shown. For a card on its own view — see the home screen shortcut below. |
 | `show_recent` | `true` | Show the strip of recent scans and codes waiting for a name. |
 | `show_products` | `true` | Show the list of learned products. |
@@ -132,9 +132,9 @@ only thing that goes back out to Open Food Facts.
 ```
 
 The second scan of the same product never asks again — it goes straight to the
-list, offline, and lands in the recent strip, so one product after another can
-be scanned without stopping. Turn `open_known` on to have each known product
-open for editing instead.
+list, offline, and the product opens so its name, category or photo can be
+corrected while it is in your hand. Turn `open_known` off to keep scanning
+without interruption.
 
 The same barcode read as UPC-A (twelve digits) and as EAN-13 (the same digits
 with a leading zero) is one product, whichever reading your scanner reports.
