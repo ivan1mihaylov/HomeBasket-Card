@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.9.3';
+const VERSION = '0.9.4';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -145,8 +145,8 @@ const TRANSLATIONS = {
       'The camera needs a secure connection. Open Home Assistant over HTTPS.',
     cameraUnsupported: 'This browser does not give web pages access to the camera.',
     cameraNoDetector:
-      'This browser has no built-in barcode detector. Type the code by hand, ' +
-      'or set zxing_url in the card configuration.',
+      'This browser reads no barcodes of its own, and the reader HomeBasket ' +
+      'serves could not be loaded. Update HomeBasket, or type the code by hand.',
     close: 'Close',
     photoTooBig: 'That image could not be read.',
   },
@@ -276,8 +276,8 @@ const TRANSLATIONS = {
       'Камерата изисква защитена връзка. Отвори Home Assistant през HTTPS.',
     cameraUnsupported: 'Този браузър не дава достъп до камерата на уеб страници.',
     cameraNoDetector:
-      'Този браузър няма вграден четец на баркодове. Въведи кода ръчно или ' +
-      'задай zxing_url в настройките на картата.',
+      'Този браузър не чете баркодове сам, а четецът, който HomeBasket ' +
+      'сервира, не можа да се зареди. Обнови HomeBasket или въведи кода ръчно.',
     close: 'Затвори',
     photoTooBig: 'Изображението не можа да бъде прочетено.',
   },
@@ -1190,19 +1190,50 @@ function readPhoto(file, maxSize = 320) {
  *
  * Uses the browser's native BarcodeDetector when available (Chrome, Edge and
  * the Android Home Assistant Companion app). Browsers without it - Safari and
- * therefore iOS - can fall back to a ZXing build, but only when the card is
- * configured with an explicit `zxing_url`, so nothing is pulled from a third
- * party behind your back.
+ * therefore iOS - fall back to a barcode reader the HomeBasket integration
+ * serves from your own installation. Nothing is fetched from a third party:
+ * the camera is pointed at what is in your kitchen, and that should not need
+ * a CDN to be read. `zxing_url` still overrides it, for a build of your own.
  * ------------------------------------------------------------------ */
 
 const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39', 'itf', 'qr_code'];
+
+// Where the integration publishes the reader it ships.
+const ZXING_URL = '/homebasket/zxing.min.js';
 
 /** Report why scanning is unavailable, or null when it should work. */
 function scannerUnavailableReason(config, t) {
   if (!window.isSecureContext) return t.cameraInsecure;
   if (!navigator.mediaDevices?.getUserMedia) return t.cameraUnsupported;
-  if (!('BarcodeDetector' in window) && !config.zxing_url) return t.cameraNoDetector;
   return null;
+}
+
+/**
+ * Load the barcode reader, and return what it exports.
+ *
+ * The file is a UMD build, so importing it as a module leaves the namespace
+ * empty and puts the library on `window` instead - take whichever arrives.
+ */
+function noReader(message) {
+  const error = new Error(message);
+  error.noDetector = true;
+  return error;
+}
+
+async function loadReader(url) {
+  let namespace;
+  try {
+    namespace = await import(/* webpackIgnore: true */ url);
+  } catch (err) {
+    // An older integration does not serve one yet.
+    throw noReader(err.message);
+  }
+  const exported = namespace && Object.keys(namespace).length
+    ? namespace.default || namespace
+    : null;
+  const library = exported?.BrowserMultiFormatReader ? exported : window.ZXing;
+  if (!library?.BrowserMultiFormatReader) throw noReader('no barcode reader in ' + url);
+  return library;
 }
 
 async function createDetector(config) {
@@ -1216,17 +1247,12 @@ async function createDetector(config) {
     };
   }
 
-  const zxing = await import(/* webpackIgnore: true */ config.zxing_url);
-  const library = zxing.default || zxing;
+  const library = await loadReader(config.zxing_url || ZXING_URL);
   const reader = new library.BrowserMultiFormatReader();
-  const canvas = document.createElement('canvas');
   return async (video) => {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    if (!canvas.width || !canvas.height) return null;
-    canvas.getContext('2d').drawImage(video, 0, 0);
+    if (!video.videoWidth || !video.videoHeight) return null;
     try {
-      return reader.decodeFromCanvas(canvas)?.getText() || null;
+      return reader.decode(video)?.getText() || null;
     } catch {
       return null; // No barcode in this frame.
     }
@@ -1316,6 +1342,8 @@ function scanWithCamera(root, config, t) {
             // that. That is not a refusal - it just needs the tap.
             if (err.name === 'NotAllowedError') {
               status.textContent = tapped ? t.cameraDenied : t.cameraNeedsTap;
+            } else if (err.noDetector) {
+              status.textContent = t.cameraNoDetector;
             } else {
               status.textContent = t.cameraFailed(err.message);
             }

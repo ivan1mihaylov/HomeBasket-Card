@@ -79,7 +79,7 @@ title: Shopping
 | `scan_on_open` | `false` | Open the camera as soon as the card is shown. For a card on its own view — see the home screen shortcut below. |
 | `show_recent` | `true` | Show the strip of recent scans and codes waiting for a name. |
 | `show_products` | `true` | Show the list of learned products. |
-| `zxing_url` | `null` | Only for browsers without a built-in barcode detector — see below. |
+| `zxing_url` | `null` | A barcode reader of your own. One is shipped with the integration — see below. |
 
 All options are also editable in the visual card editor.
 
@@ -226,15 +226,17 @@ required for it to work at all:
 - an **HTTPS** connection (Nabu Casa, a reverse proxy, or a local certificate);
 - camera permission for Home Assistant.
 
-**Safari and iOS** have no `BarcodeDetector`. You can either type the code in,
-use a hardware scanner, or point the card at a ZXing build you host yourself:
+**Safari and iOS** have no `BarcodeDetector` of their own. The HomeBasket
+integration ships one and serves it from your own installation, so scanning
+works there too with nothing to set up — the card loads it only when the
+browser has no reader of its own, and nothing is ever fetched from a CDN.
+
+To use a build of your own instead:
 
 ```yaml
 type: custom:homebasket-card
 zxing_url: /local/homebasket/zxing.min.js
 ```
-
-Nothing is loaded from a third party unless you set that option.
 
 ## License
 
