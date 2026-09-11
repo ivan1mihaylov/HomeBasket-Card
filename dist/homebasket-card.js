@@ -9,7 +9,7 @@
  * https://github.com/ivan1mihaylov/HomeBasket-Card
  */
 
-const VERSION = '0.11.1';
+const VERSION = '0.11.2';
 
 /* ------------------------------------------------------------------ *
  * Translations
@@ -61,7 +61,7 @@ const TRANSLATIONS = {
       produce: 'Greengrocer',
       butcher: 'Butcher',
       cosmetics: 'Cosmetics',
-      medicines: 'Medicines',
+      medicines: 'Pharmacy',
       pets: 'Pet shop',
       building: 'Building supplies',
     },
@@ -210,7 +210,7 @@ const TRANSLATIONS = {
       produce: 'Плод и зеленчук',
       butcher: 'Месарница',
       cosmetics: 'Парфюмерия и козметика',
-      medicines: 'Лекарства',
+      medicines: 'Аптека',
       pets: 'Домашни любимци',
       building: 'Строителни материали',
     },
