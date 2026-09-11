@@ -72,6 +72,8 @@ const TRANSLATIONS = {
       'whether it has been added since.',
     fetchedOn: (when) => `From Open Food Facts, ${when}`,
     openOnOff: 'Open Food Facts page',
+    openOnOpf: 'Open Products Facts page',
+    kinds: { food: 'Groceries', product: 'Product' },
     sectionNutrition: 'Nutrition, per 100 g',
     sectionIngredients: 'Ingredients',
     sectionAbout: 'About',
@@ -191,6 +193,8 @@ const TRANSLATIONS = {
       'за да провериш дали е добавен междувременно.',
     fetchedOn: (when) => `От Open Food Facts, ${when}`,
     openOnOff: 'Страница в Open Food Facts',
+    openOnOpf: 'Страница в Open Products Facts',
+    kinds: { food: 'Хранителна стока', product: 'Продукт' },
     sectionNutrition: 'Хранителни стойности, на 100 г',
     sectionIngredients: 'Съставки',
     sectionAbout: 'За продукта',
@@ -702,10 +706,14 @@ const STYLES = `
   .details-head .who .name { font-size: 1.05rem; font-weight: 600; line-height: 1.25; }
   .details-head .who .sub { font-size: 0.8125rem; color: var(--hb-muted); }
   .details-head .who .code {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.75rem;
     color: var(--hb-muted);
   }
+  .details-head .who .code .chip { font-family: inherit; max-width: none; }
 
   .grades { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
   .grade {
@@ -2055,7 +2063,15 @@ class HomeBasketCard extends HTMLElement {
           details.generic_name && details.generic_name !== details.name
             ? el('div', { class: 'sub', text: details.generic_name })
             : null,
-          el('div', { class: 'code', text: details.code }),
+          el(
+            'div',
+            { class: 'code' },
+            el('span', { text: details.code }),
+            // Which of the two databases knew it, said plainly.
+            t.kinds[details.kind]
+              ? el('span', { class: 'chip', text: t.kinds[details.kind] })
+              : null,
+          ),
         ),
       ),
     );
@@ -2118,7 +2134,7 @@ class HomeBasketCard extends HTMLElement {
           href: details.url,
           target: '_blank',
           rel: 'noopener noreferrer',
-          text: t.openOnOff,
+          text: details.kind === 'product' ? t.openOnOpf : t.openOnOff,
         }),
       ),
     );

@@ -113,10 +113,15 @@ The edit sheet lists a product's barcodes, each detachable except the first.
 
 ## Product details
 
-Tapping a product's name opens everything Open Food Facts knows about it:
-Nutri-Score, NOVA and Eco-Score, the nutrition table per 100 g, the ingredient
-list, allergens, labels, packaging, origin and where it is sold, with a link to
-the product's page on Open Food Facts.
+Tapping a product's name opens everything the databases know about it. For a
+grocery that is Nutri-Score, NOVA and Eco-Score, the nutrition table per 100 g,
+the ingredient list, allergens, labels, packaging, origin and where it is sold.
+For anything that is not food — the integration falls back to
+[Open Products Facts](https://world.openproductsfacts.org/) — there is no
+nutrition to show, so the sheet shows what such a product does have: brand,
+categories, labels, origin, where it was made and where it is sold. Which of
+the two it is stands next to the barcode, and the link at the bottom goes to
+the database that knew it.
 
 The record is fetched once, when the barcode is first scanned, and kept by the
 integration — opening a product reads that stored copy and makes no network
