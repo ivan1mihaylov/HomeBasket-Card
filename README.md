@@ -15,6 +15,14 @@ a rename inside the Home Assistant frontend cannot leave you with an invisible
 input field or a missing button. It ships as a single file, so there are no
 sub-modules that can get stuck in a browser cache.
 
+## Languages
+
+**Bulgarian and English.** The card follows the language of the person using
+Home Assistant, or the `language` option when that is set; anything else falls
+back to English. Product names are whatever the integration stored — the
+language asked of Open Food Facts is a setting of the integration, and names you
+type in yourself are kept exactly as typed.
+
 ## Requirements
 
 The [HomeBasket integration](https://github.com/ivan1mihaylov/HomeBasket) has
@@ -36,7 +44,7 @@ Copy `dist/homebasket-card.js` to `config/www/homebasket/homebasket-card.js`
 and register it under **Settings → Dashboards → Resources**:
 
 ```
-URL:  /local/homebasket/homebasket-card.js?v=0.1.0
+URL:  /local/homebasket/homebasket-card.js?v=0.6.0
 Type: JavaScript Module
 ```
 
@@ -61,8 +69,7 @@ title: Shopping
 | `show_products` | `true` | Show the list of learned products. |
 | `zxing_url` | `null` | Only for browsers without a built-in barcode detector — see below. |
 
-All options are also editable in the visual card editor. The interface is
-translated into English and Bulgarian.
+All options are also editable in the visual card editor.
 
 ## Product photos
 
@@ -71,8 +78,8 @@ Products are shown with a picture wherever one is available:
 - **Automatically** — the integration stores the product image Open Food Facts
   returns, and the card loads it from there.
 - **Your own** — tap a product's thumbnail (or the pencil) and press the square
-  camera button. On a phone that opens the camera; on a desktop it opens the
-  file picker. The photo is scaled down in the browser before it is sent, and
+  camera button at the top of the sheet. On a phone that opens the camera; on a
+  desktop it opens the file picker. The photo is scaled down in the browser before it is sent, and
   Home Assistant keeps it in its own storage — it is never served from a
   public path.
 
@@ -98,9 +105,9 @@ barcode joins it; ignore them and you get two separate products. A scan with
 nothing similar in the list never opens anything — it stays the one-beep path.
 
 Matching compares the words of the name and brand, ignoring sizes, and weighs
-each word by how many products already use it: in a fridge full of "мляко
-Верея", what identifies a product is "кисело". So a 900 g tub finds the 400 g
-one without matching every other dairy item.
+each word by how many products already use it: in a fridge full of "Vereya
+milk", the word that identifies a product is "yogurt". So a 900 g tub finds the
+400 g one without matching every other dairy item.
 
 The edit sheet lists a product's barcodes, each detachable except the first.
 
@@ -136,8 +143,9 @@ list, offline, and lands in the recent strip, so one product after another can
 be scanned without stopping. With
 [HomeBasket Lists](https://github.com/ivan1mihaylov/HomeBasket-Lists) as the
 shopping list, scanning something that is already on it counts one more of it
-and the card says so (*мляко в списъка: станаха 2*) rather than shrugging with
-"already on the list". Turn `open_known` on to have each known product
+and the card says so (*milk on the list: 2 now*) rather than shrugging with
+"already on the list" — unless that list is set to keep what it has, which the
+card reports just as plainly. Turn `open_known` on to have each known product
 open for editing instead.
 
 The same barcode read as UPC-A (twelve digits) and as EAN-13 (the same digits
