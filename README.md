@@ -17,13 +17,17 @@ a rename inside the Home Assistant frontend cannot leave you with an invisible
 input field or a missing button. It ships as a single file, so there are no
 sub-modules that can get stuck in a browser cache.
 
-## The three parts
+## The parts
 
-| | What it is |
-| --- | --- |
-| **[HomeBasket](https://github.com/ivan1mihaylov/HomeBasket)** | Scanning, and the products it learns: names, barcodes, pictures, everything the databases know. |
-| **HomeBasket Card** | This: scanning with a phone, for when there is no scanner on a shelf — and the place to look after the products themselves. |
-| **[HomeBasket Lists](https://github.com/ivan1mihaylov/HomeBasket-Lists)** | Shopping lists and tasks, using what HomeBasket knows. |
+Each part is installed separately; **Needs** says what it cannot work without. Mealie is the recipe manager, not one of these parts.
+
+| | What it is | Needs |
+| --- | --- | --- |
+| **[HomeBasket](https://github.com/ivan1mihaylov/HomeBasket)** | Scanning, and the products it learns: names, barcodes, pictures, everything the databases know. | Nothing else. Puts scans on a HomeBasket Lists list when that is installed, otherwise on a to-do list. |
+| **HomeBasket Card** | This: scanning with a phone, for when there is no scanner on a shelf — and the place to look after the products themselves. | **HomeBasket** (required). |
+| **[HomeBasket Lists](https://github.com/ivan1mihaylov/HomeBasket-Lists)** | Shopping lists and tasks, using what HomeBasket knows. | Nothing else. HomeBasket is optional: with it, items get products and pictures, and a list can scan. |
+| **[Mealie Discover](https://github.com/ivan1mihaylov/Mealie-Discover)** | Finds recipes on the web and adds them to Mealie. | **Mealie** (required), and at least one of SearXNG, a YouTube key or Social to Mealie. |
+| **[Mealie Planner](https://github.com/ivan1mihaylov/Mealie-Planner)** | Plans the week in Mealie from your rules and the Lidl, Kaufland and Billa offers, and lists the week's products by shop. | **Mealie** (required). HomeBasket Lists is optional, for putting the products on a list; AI is optional. |
 
 The recent scans shown here come from the integration, so a scan made anywhere —
 this card, a hardware scanner, the scan button on a list — shows up in the strip
